@@ -151,8 +151,6 @@
     border:1px solid rgba(246,243,233,0.05);
   }
   .cell:nth-child(odd){background:rgba(246,243,233,0.02);}
-  #board.placing .cell{cursor:pointer;}
-  #board.placing .cell:hover{background:rgba(226,166,59,0.28);outline:1px solid var(--amber);}
   .cell.finish{color:var(--amber);}
   .cell.finish::after{
     content:"🏁";
@@ -244,27 +242,24 @@
   .team-row .rm:hover{color:var(--snake);}
 
   /* dice */
-  .dice-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0;}
-  .die{
-    aspect-ratio:1/1;
+  .dice-area{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    background:rgba(0,0,0,0.2);
+    padding:18px;border-radius:var(--radius);
+    margin:6px 0 4px;
+  }
+  .die-big{
+    width:76px;height:76px;
     background:var(--chalk);
     color:var(--ink);
-    border-radius:8px;
+    border-radius:12px;
     display:flex;align-items:center;justify-content:center;
-    font-family:'Anton',sans-serif;font-size:22px;
-    cursor:pointer;
+    font-family:'Anton',sans-serif;font-size:38px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.4);
     border:2px solid transparent;
-    transition:.12s;
+    transition:transform .08s;
   }
-  .die:hover{transform:translateY(-2px);border-color:var(--amber);}
-  .die.active{background:var(--amber);}
-  .roll-readout{
-    display:flex;align-items:center;justify-content:space-between;
-    background:rgba(0,0,0,0.25);
-    padding:10px 12px;border-radius:var(--radius);
-    margin-bottom:10px;
-  }
-  .roll-readout .val{font-family:'Anton',sans-serif;font-size:28px;color:var(--amber);}
+  .die-big.rolling{border-color:var(--amber);}
   .row{display:flex;gap:8px;}
   .row > *{flex:1;}
   hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
@@ -360,6 +355,38 @@
     background:rgba(0,0,0,0.25);border:1px solid var(--line);
     border-radius:5px;color:var(--chalk);padding:8px 10px;font-size:13px;width:100%;
   }
+
+  /* mode selector */
+  .mode-list{display:flex;flex-direction:column;gap:8px;}
+  .mode-opt{
+    display:flex;align-items:center;gap:10px;
+    padding:9px 10px;border-radius:var(--radius);
+    background:rgba(0,0,0,0.15);border:1.5px solid transparent;
+    cursor:pointer;
+  }
+  .mode-opt.active{border-color:var(--amber);background:rgba(226,166,59,0.1);}
+  .mode-opt input{accent-color:var(--amber);}
+  .mode-opt span{font-weight:600;font-size:13.5px;}
+  .mode-opt.disabledOpt{opacity:.5;cursor:not-allowed;}
+
+  /* shadow master key */
+  .master-key{font-size:12px;color:var(--chalk-dim);line-height:1.7;filter:blur(0);}
+  .master-key.hidden{filter:blur(6px);user-select:none;}
+  .master-key .k-ladder{color:var(--ladder);}
+  .master-key .k-snake{color:var(--snake);}
+
+  /* draft inventory */
+  .item-row{
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(0,0,0,0.15);padding:8px 10px;border-radius:5px;margin-bottom:6px;
+    font-size:13px;
+  }
+  .item-row .qty{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;}
+  .item-row button{flex:0 0 auto;}
+  select.field{
+    background:rgba(0,0,0,0.25);border:1px solid var(--line);
+    border-radius:5px;color:var(--chalk);padding:8px 10px;font-size:13px;width:100%;
+  }
 </style>
 </head>
 <body>
@@ -414,21 +441,47 @@
           </div>
         </div>
 
-        <div class="roll-readout">
-          <div>
-            <div class="label" style="font-size:11px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:1px;">Record physical dice roll</div>
-            <div style="font-size:12px;color:var(--chalk-dim);">Tap the number that was actually thrown on the field</div>
-          </div>
-          <div class="val" id="lastRollVal">–</div>
+        <div class="dice-area">
+          <div class="die-big" id="dieBig">1</div>
+          <button class="btn primary" id="btnRoll" style="width:100%;">Roll dice</button>
         </div>
-        <div class="dice-grid" id="diceGrid"></div>
-        <div class="row">
-          <button class="btn primary" id="btnApplyRoll" disabled>Record roll</button>
+        <div class="row" style="margin-top:10px;">
           <button class="btn" id="btnUndo" disabled>Undo last</button>
         </div>
-        <div class="empty-note" id="placeHint" style="display:none;margin-top:10px;padding:9px 10px;background:rgba(226,166,59,0.12);border:1px solid var(--amber-dim);border-radius:5px;color:var(--chalk);">
-          Roll recorded. Now tap the square on the board where the pawn actually landed to place it.
+      </div>
+
+      <div class="panel">
+        <h2>Game Mode</h2>
+        <div id="modeList" class="mode-list"></div>
+        <p class="empty-note" id="modeDesc" style="margin-top:6px;"></p>
+      </div>
+
+      <div class="panel" id="shadowPanel" style="display:none;">
+        <h2>Master Key <button class="btn small" id="btnToggleKey">Reveal (host only)</button></h2>
+        <p class="empty-note">Board starts blank. Squares reveal only once a pawn actually lands on them.</p>
+        <div id="masterKey" class="master-key hidden"></div>
+      </div>
+
+      <div class="panel" id="draftPanel" style="display:none;">
+        <h2>Inventory — <span id="draftTeamName">—</span></h2>
+        <div id="draftItems"></div>
+        <hr class="sep">
+        <div class="row">
+          <button class="btn" id="btnLoadedLow">Loaded die: 1–3</button>
+          <button class="btn" id="btnLoadedHigh">Loaded die: 4–6</button>
         </div>
+        <p class="empty-note" id="loadedStatus" style="margin-top:6px;"></p>
+      </div>
+
+      <div class="panel" id="gravityPanel" style="display:none;">
+        <h2>Audience Board Shift</h2>
+        <p class="empty-note" id="shiftStatus">Shift available every 3 turns.</p>
+        <div class="row">
+          <button class="btn" id="btnInvert" disabled>Invert Gravity</button>
+          <button class="btn" id="btnQuicksand" disabled>Quicksand</button>
+          <button class="btn" id="btnBounty" disabled>Bounty</button>
+        </div>
+        <p class="empty-note" id="activeModifiers" style="margin-top:8px;"></p>
       </div>
 
       <div class="panel">
@@ -493,26 +546,51 @@ const LS_STATE = "snl_game_state_v1";
 const LS_LEADERBOARD = "snl_leaderboard_v1";
 const LS_LOG = "snl_log_v1";
 
-const SNAKES = { 98:37, 95:56, 89:53, 74:47, 62:19, 54:34, 17:4 };
-const LADDERS = { 3:20, 8:29, 20:41, 27:56, 39:63, 47:68, 63:81, 71:91 };
+const BASE_SNAKES = { 98:37, 95:56, 89:53, 74:47, 62:19, 54:34, 17:4 };
+const BASE_LADDERS = { 3:20, 8:29, 20:41, 27:56, 39:63, 47:68, 63:81, 71:91 };
 
 const TEAM_COLORS = ["#c0463b","#2e78a6","#e2a63b","#5a9e6f","#9a5bc4","#c46b9a","#4c7bd9","#c48b3b"];
 
+const MODES = [
+  {id:'classic', name:'Classic', desc:'Standard rules — visible board, roll and move, ladder/snake challenges.'},
+  {id:'shadow', name:'The Shadow Grid', desc:'Board starts blank. Snakes, ladders, and trapdoors are only revealed once a team actually lands on them — the host holds the master key.'},
+  {id:'draft', name:'Draft & Trade', desc:'Each team starts with a Deflector Shield, Ladder Sabotage, Swapper, and a Loaded Die charge to use strategically.'},
+  {id:'gravity', name:'Audience-Driven Gravity', desc:'Every 3 turns, the host reads out the crowd\'s poll result and applies a Board Shift: Invert Gravity, Quicksand, or Bounty.'}
+];
+
+/* Active snake/ladder maps — respects Gravity mode's Invert effect */
+function activeSnakes(){
+  if(state.mode==='gravity' && state.gravity && state.gravity.invert) return BASE_LADDERS;
+  return BASE_SNAKES;
+}
+function activeLadders(){
+  if(state.mode==='gravity' && state.gravity && state.gravity.invert) return BASE_SNAKES;
+  return BASE_LADDERS;
+}
+
 /* ============================= STATE ============================= */
 let state = loadState() || {
-  teams: [],           // {id,name,color,pos,active}
+  teams: [],           // {id,name,color,pos,active,inventory:{shield,sabotage,swapper,loadedDie}}
   turnIndex: 0,
   started: false,
   finished: false,
-  history: []           // {teamId, roll, from, to, event}
+  history: [],          // {teamId, roll, from, to, event}
+  mode: 'classic',
+  revealed: {},          // shadow mode: square -> true once revealed
+  brokenLadders: {},     // draft mode: square -> true (sabotaged, one-time)
+  gravity: {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}}
 };
+if(!state.mode) state.mode='classic';
+if(!state.revealed) state.revealed={};
+if(!state.brokenLadders) state.brokenLadders={};
+if(!state.gravity) state.gravity={turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
 
 let leaderboard = loadLeaderboard() || {}; // name -> {wins,losses,matches}
 
-let diceSelected = null;
 let pendingChallenge = null; // {teamId, type:'snake'|'ladder', from, to}
 let timerInterval = null;
 let undoStack = [];
+let armedLoadedDie = null; // 'low' | 'high' | null (per-turn, not persisted — host arms right before rolling)
 
 /* ============================= PERSISTENCE ============================= */
 function saveState(){ localStorage.setItem(LS_STATE, JSON.stringify(state)); }
@@ -572,21 +650,48 @@ function drawOverlay(){
   let svg = `<defs>
     <marker id="arrowLadder" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle cx="3" cy="3" r="3" fill="var(--ladder)"/></marker>
   </defs>`;
-  // ladders
-  Object.entries(LADDERS).forEach(([from,to])=>{
+  const ladders = activeLadders(), snakes = activeSnakes();
+  const shadow = state.mode==='shadow';
+
+  Object.entries(ladders).forEach(([from,to])=>{
+    if(shadow && !state.revealed[from]) return;
     const a = squareCenterPct(+from), b = squareCenterPct(+to);
     svg += ladderRungs(a,b);
   });
-  // snakes
-  Object.entries(SNAKES).forEach(([from,to])=>{
+  Object.entries(snakes).forEach(([from,to])=>{
+    if(shadow && !state.revealed[from]) return;
     const a = squareCenterPct(+from), b = squareCenterPct(+to);
     svg += snakeCurve(a,b);
   });
   overlayEl.innerHTML = svg;
-  // number badges
+
   document.querySelectorAll('.badge').forEach(b=>b.remove());
-  Object.entries(LADDERS).forEach(([from,to])=>tagCell(from,'ladder','▲'));
-  Object.entries(SNAKES).forEach(([from,to])=>tagCell(from,'snake','▼'));
+  document.querySelectorAll('.cell').forEach(c=>{ c.style.background=''; });
+  Object.entries(ladders).forEach(([from,to])=>{
+    if(shadow && !state.revealed[from]) return;
+    tagCell(from,'ladder','▲');
+  });
+  Object.entries(snakes).forEach(([from,to])=>{
+    if(shadow && !state.revealed[from]) return;
+    tagCell(from,'snake','▼');
+  });
+
+  // quicksand markers (gravity mode)
+  if(state.mode==='gravity' && state.gravity.quicksand.length){
+    state.gravity.quicksand.forEach(sq=>{
+      const cell = boardEl.querySelector(`.cell[data-square="${sq}"]`);
+      if(cell) cell.style.background = 'rgba(226,166,59,0.22)';
+    });
+  }
+  // bounty marker
+  if(state.mode==='gravity' && state.gravity.bounty){
+    const cell = boardEl.querySelector(`.cell[data-square="${state.gravity.bounty}"]`);
+    if(cell){
+      const b = document.createElement('span');
+      b.className='badge ladder'; b.textContent='★'; b.style.right='3px'; b.style.bottom='3px'; b.style.left='auto';
+      cell.appendChild(b);
+    }
+  }
 }
 function tagCell(sq,type,icon){
   const cell = boardEl.querySelector(`.cell[data-square="${sq}"]`);
@@ -695,7 +800,11 @@ document.getElementById('btnAddTeam').addEventListener('click', ()=>{
   if(!name) return toast("Enter a team name first.");
   if(state.started) return toast("Match already in progress — reset to add teams.");
   const color = TEAM_COLORS[state.teams.length % TEAM_COLORS.length];
-  state.teams.push({id: crypto.randomUUID(), name, color, pos:1, active:true});
+  state.teams.push({
+    id: crypto.randomUUID(), name, color, pos:1, active:true,
+    inventory:{shield:1, sabotage:1, swapper:1, loadedDie:1},
+    shieldArmed:false
+  });
   input.value="";
   saveState(); renderTeams(); renderPawns(); renderTurnBanner();
 });
@@ -705,13 +814,172 @@ document.getElementById('btnStartMatch').addEventListener('click', ()=>{
   state.started = true;
   state.finished = false;
   state.turnIndex = 0;
-  state.teams.forEach(t=>{ t.pos=1; t.active=true; });
+  state.teams.forEach(t=>{
+    t.pos=1; t.active=true;
+    t.inventory = {shield:1, sabotage:1, swapper:1, loadedDie:1};
+    t.shieldArmed = false;
+  });
   state.history = [];
+  state.revealed = {};
+  state.brokenLadders = {};
+  state.gravity = {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
   undoStack = [];
   saveState();
+  buildBoard();
   renderAll();
-  toast("Match started. Good luck!");
+  toast(`Match started in ${MODES.find(m=>m.id===state.mode).name} mode. Good luck!`);
 });
+
+/* ============================= GAME MODE ============================= */
+const modeListEl = document.getElementById('modeList');
+function renderModeSelector(){
+  modeListEl.innerHTML = MODES.map(m=>`
+    <label class="mode-opt ${state.mode===m.id?'active':''} ${state.started?'disabledOpt':''}">
+      <input type="radio" name="mode" value="${m.id}" ${state.mode===m.id?'checked':''} ${state.started?'disabled':''}>
+      <span>${m.name}</span>
+    </label>
+  `).join('');
+  document.getElementById('modeDesc').textContent = MODES.find(m=>m.id===state.mode).desc;
+  modeListEl.querySelectorAll('input[name=mode]').forEach(r=>{
+    r.addEventListener('change', e=>{
+      if(state.started) return;
+      state.mode = e.target.value;
+      saveState();
+      renderModeSelector();
+      renderModePanels();
+      buildBoard();
+    });
+  });
+  document.getElementById('shadowPanel').style.display = state.mode==='shadow' ? '' : 'none';
+  document.getElementById('draftPanel').style.display = state.mode==='draft' ? '' : 'none';
+  document.getElementById('gravityPanel').style.display = state.mode==='gravity' ? '' : 'none';
+}
+function renderModePanels(){
+  document.getElementById('shadowPanel').style.display = state.mode==='shadow' ? '' : 'none';
+  document.getElementById('draftPanel').style.display = state.mode==='draft' ? '' : 'none';
+  document.getElementById('gravityPanel').style.display = state.mode==='gravity' ? '' : 'none';
+  if(state.mode==='shadow') renderMasterKey();
+  if(state.mode==='draft') renderDraftPanel();
+  if(state.mode==='gravity') renderGravityPanel();
+}
+
+/* --- Shadow Grid --- */
+document.getElementById('btnToggleKey').addEventListener('click', ()=>{
+  document.getElementById('masterKey').classList.toggle('hidden');
+});
+function renderMasterKey(){
+  const el = document.getElementById('masterKey');
+  const ladders = Object.entries(activeLadders()).map(([f,t])=>`<div class="k-ladder">▲ ${f} → ${t}</div>`).join('');
+  const snakes = Object.entries(activeSnakes()).map(([f,t])=>`<div class="k-snake">▼ ${f} → ${t}</div>`).join('');
+  el.innerHTML = ladders + snakes;
+}
+
+/* --- Draft & Trade --- */
+function renderDraftPanel(){
+  const team = currentTeam();
+  document.getElementById('draftTeamName').textContent = team ? team.name : '—';
+  const itemsEl = document.getElementById('draftItems');
+  if(!team){ itemsEl.innerHTML = `<div class="empty-note">Start the match to see inventory.</div>`; return; }
+  const inv = team.inventory;
+  itemsEl.innerHTML = `
+    <div class="item-row"><span>🛡️ Deflector Shield ${team.shieldArmed?'<b style="color:var(--amber)">(armed)</b>':''}</span>
+      <span class="qty">${inv.shield}</span></div>
+    <div class="item-row"><span>🪜 Ladder Sabotage</span>
+      <span class="qty">${inv.sabotage}</span></div>
+    <div class="item-row"><span>🔀 Swapper</span>
+      <span class="qty">${inv.swapper}</span></div>
+    <div class="item-row" style="flex-wrap:wrap;gap:8px;">
+      <button class="btn small" id="btnUseShield" ${inv.shield<1||team.shieldArmed?'disabled':''}>Arm shield</button>
+      <button class="btn small" id="btnUseSabotage" ${inv.sabotage<1?'disabled':''}>Sabotage a ladder</button>
+      <button class="btn small" id="btnUseSwapper" ${inv.swapper<1?'disabled':''}>Swap with team</button>
+    </div>
+  `;
+  const b1 = document.getElementById('btnUseShield');
+  if(b1) b1.addEventListener('click', ()=>{
+    team.inventory.shield -= 1; team.shieldArmed = true;
+    logEntry(`<b>${team.name}</b> armed a Deflector Shield.`, 'move');
+    saveState(); renderDraftPanel(); renderTeams();
+  });
+  const b2 = document.getElementById('btnUseSabotage');
+  if(b2) b2.addEventListener('click', ()=>{
+    const ladders = Object.keys(activeLadders()).filter(sq=>!state.brokenLadders[sq]);
+    if(ladders.length===0) return toast("No un-sabotaged ladders left.");
+    const choice = prompt(`Sabotage which ladder square? Options: ${ladders.join(', ')}`, ladders[0]);
+    if(!choice || !ladders.includes(choice)) return;
+    team.inventory.sabotage -= 1;
+    state.brokenLadders[choice] = true;
+    logEntry(`<b>${team.name}</b> sabotaged the ladder at ${choice} — next team to land there won't climb.`, 'ladder');
+    saveState(); renderDraftPanel(); renderTeams();
+  });
+  const b3 = document.getElementById('btnUseSwapper');
+  if(b3) b3.addEventListener('click', ()=>{
+    const targets = state.teams.filter(t=>t.active && t.id!==team.id && Math.abs(t.pos-team.pos)<=5);
+    if(targets.length===0) return toast("No team within 5 squares to swap with.");
+    const names = targets.map(t=>`${t.name} (sq ${t.pos})`).join(' | ');
+    const choice = prompt(`Swap with which team? ${names}`, targets[0].name);
+    const target = targets.find(t=>t.name===choice);
+    if(!target) return;
+    const p1 = team.pos, p2 = target.pos;
+    team.pos = p2; target.pos = p1;
+    team.inventory.swapper -= 1;
+    logEntry(`<b>${team.name}</b> swapped positions with <b>${target.name}</b> (${p1} ⇄ ${p2}).`, 'move');
+    saveState(); renderDraftPanel(); renderTeams(); renderPawns();
+  });
+}
+document.getElementById('btnLoadedLow').addEventListener('click', ()=>armLoadedDie('low'));
+document.getElementById('btnLoadedHigh').addEventListener('click', ()=>armLoadedDie('high'));
+function armLoadedDie(range){
+  const team = currentTeam();
+  if(!team) return;
+  if(team.inventory.loadedDie < 1) return toast("No Loaded Die charges left.");
+  armedLoadedDie = range;
+  document.getElementById('loadedStatus').textContent = `Loaded die armed: ${range==='low'?'1–3':'4–6'} for ${team.name}'s next roll.`;
+  toast(`Loaded die armed (${range==='low'?'1–3':'4–6'}) for ${team.name}.`);
+}
+
+/* --- Audience-Driven Gravity --- */
+document.getElementById('btnInvert').addEventListener('click', ()=>applyShift('invert'));
+document.getElementById('btnQuicksand').addEventListener('click', ()=>applyShift('quicksand'));
+document.getElementById('btnBounty').addEventListener('click', ()=>applyShift('bounty'));
+function applyShift(type){
+  const g = state.gravity;
+  if(type==='invert'){
+    g.invert = true; g.invertTurnsLeft = 3;
+    logEntry(`🔄 Audience vote: <b>Invert Gravity</b> — all snakes and ladders swap for the next 3 turns!`, 'win');
+  } else if(type==='quicksand'){
+    const all = Array.from({length:98}, (_,i)=>i+2);
+    const picks = [];
+    while(picks.length<3 && all.length){
+      const idx = Math.floor(Math.random()*all.length);
+      picks.push(all.splice(idx,1)[0]);
+    }
+    g.quicksand = picks; g.quicksandTurnsLeft = 3;
+    logEntry(`🌀 Audience vote: <b>Quicksand</b> — squares ${picks.join(', ')} freeze whoever lands there for one turn!`, 'win');
+  } else if(type==='bounty'){
+    g.bounty = 50;
+    logEntry(`⭐ Audience vote: <b>Bounty</b> — first team to land exactly on square 50 gets a double move!`, 'win');
+  }
+  g.turnsSinceShift = 0;
+  saveState();
+  buildBoard();
+  renderAll();
+}
+function renderGravityPanel(){
+  const g = state.gravity;
+  const remaining = Math.max(0, 3 - g.turnsSinceShift);
+  const ready = state.started && !state.finished && remaining===0;
+  document.getElementById('shiftStatus').textContent = ready
+    ? "Board Shift ready — read out the crowd's poll result and pick the outcome."
+    : `Board Shift available in ${remaining} turn${remaining===1?'':'s'}.`;
+  document.getElementById('btnInvert').disabled = !ready;
+  document.getElementById('btnQuicksand').disabled = !ready;
+  document.getElementById('btnBounty').disabled = !ready;
+  const mods = [];
+  if(g.invert) mods.push(`Gravity inverted (${g.invertTurnsLeft} turn${g.invertTurnsLeft===1?'':'s'} left)`);
+  if(g.quicksand.length) mods.push(`Quicksand on ${g.quicksand.join(', ')} (${g.quicksandTurnsLeft} turn${g.quicksandTurnsLeft===1?'':'s'} left)`);
+  if(g.bounty) mods.push(`Bounty active on square ${g.bounty}`);
+  document.getElementById('activeModifiers').textContent = mods.length ? mods.join(' · ') : 'No active modifiers.';
+}
 
 /* ============================= TURN BANNER ============================= */
 function currentTeam(){
@@ -733,104 +1001,181 @@ function renderTurnBanner(){
   nameEl.textContent = t.name;
 }
 
-/* ============================= DICE ============================= */
-const diceGrid = document.getElementById('diceGrid');
-for(let i=1;i<=6;i++){
-  const d = document.createElement('div');
-  d.className='die'; d.textContent=i; d.dataset.val=i;
-  d.addEventListener('click', ()=>{
-    if(!state.started || state.finished) return toast("Start the match first.");
-    diceSelected = i;
-    document.querySelectorAll('.die').forEach(el=>el.classList.remove('active'));
-    d.classList.add('active');
-    document.getElementById('lastRollVal').textContent = i;
-    document.getElementById('btnApplyRoll').disabled = false;
-  });
-  diceGrid.appendChild(d);
-}
+/* ============================= DICE & MOVEMENT ============================= */
+const dieBig = document.getElementById('dieBig');
+const btnRoll = document.getElementById('btnRoll');
+let isRolling = false;
 
-document.getElementById('btnApplyRoll').addEventListener('click', recordRoll);
+btnRoll.addEventListener('click', ()=>{
+  if(isRolling) return;
+  if(!state.started || state.finished) return toast("Start the match first.");
+  const team = currentTeam();
+  if(team && state.mode==='gravity' && state.gravity.frozen[team.id]){
+    // frozen teams auto-skip when rolled for; advanceTurn already handles skipping,
+    // but guard here in case renderAll hasn't caught up.
+  }
+
+  isRolling = true;
+  btnRoll.disabled = true;
+  dieBig.classList.add('rolling');
+
+  const range = (state.mode==='draft' && armedLoadedDie) ? armedLoadedDie : null;
+  const min = range==='low' ? 1 : (range==='high' ? 4 : 1);
+  const max = range==='low' ? 3 : (range==='high' ? 6 : 6);
+
+  let ticks = 0;
+  const spin = setInterval(()=>{
+    dieBig.textContent = min + Math.floor(Math.random()*(max-min+1));
+    ticks++;
+    if(ticks > 12){
+      clearInterval(spin);
+      const finalRoll = min + Math.floor(Math.random()*(max-min+1));
+      dieBig.textContent = finalRoll;
+      dieBig.classList.remove('rolling');
+      isRolling = false;
+      if(range && team){
+        team.inventory.loadedDie -= 1;
+        logEntry(`<b>${team.name}</b> used a Loaded Die (${range==='low'?'1–3':'4–6'}).`, 'move');
+        armedLoadedDie = null;
+        document.getElementById('loadedStatus').textContent = '';
+      }
+      processMove(finalRoll);
+    }
+  }, 60);
+});
+
 document.getElementById('btnUndo').addEventListener('click', undoLast);
 
-let awaitingPlacement = null; // {teamId, roll, from}
-
-function recordRoll(){
-  if(diceSelected==null) return;
-  if(!state.started || state.finished) return;
+function processMove(steps){
+  if(!state.started || state.finished){ btnRoll.disabled=false; return; }
   const team = currentTeam();
-  if(!team) return;
+  if(!team){ btnRoll.disabled=false; return; }
 
-  awaitingPlacement = {teamId:team.id, roll:diceSelected, from:team.pos};
-  document.getElementById('placeHint').style.display = 'block';
-  document.getElementById('btnApplyRoll').disabled = true;
-  boardEl.classList.add('placing');
-  document.querySelectorAll('.die').forEach(el=>el.style.pointerEvents='none');
-  toast(`Roll of ${diceSelected} recorded for ${team.name}. Tap the landing square on the board.`);
-}
+  const from = team.pos;
+  let to = from + steps;
+  let overflow = false;
+  if(to > 100){ to = from; overflow = true; } // must land exactly on 100
 
-function placePawn(targetSquare){
-  if(!awaitingPlacement) return;
-  const team = state.teams.find(t=>t.id===awaitingPlacement.teamId);
-  if(!team) return;
-  const from = awaitingPlacement.from;
-  const roll = awaitingPlacement.roll;
-  let to = targetSquare;
-  if(to > 100) to = 100;
-  if(to < 1) to = 1;
+  undoStack.push(JSON.parse(JSON.stringify({teams:state.teams, turnIndex:state.turnIndex, history:state.history, mode:state.mode, revealed:state.revealed, brokenLadders:state.brokenLadders, gravity:state.gravity})));
 
-  undoStack.push(JSON.parse(JSON.stringify({teams:state.teams, turnIndex:state.turnIndex, history:state.history})));
+  if(overflow){
+    const entry = {teamId:team.id, teamName:team.name, roll:steps, from, to:from, event:'bounce', time:Date.now()};
+    state.history.push(entry);
+    logEntry(`<b>${team.name}</b> rolled ${steps} — exceeds 100, needs the exact number. Stays on ${from}.`, 'move');
+    advanceTurn();
+    saveState(); renderAll();
+    resetDice();
+    return;
+  }
 
   team.pos = to;
-  const entry = {teamId:team.id, teamName:team.name, roll, from, to, event:'move', time:Date.now()};
+  const entry = {teamId:team.id, teamName:team.name, roll:steps, from, to, event:'move', time:Date.now()};
   state.history.push(entry);
-  logEntry(`<b>${team.name}</b> rolled ${roll} — host placed pawn ${from} → ${to}.`, 'move');
+  logEntry(`<b>${team.name}</b> rolled ${steps} — moves ${from} → ${to}.`, 'move');
   saveState();
   renderPawns(); renderTeams();
   resetDice();
 
-  if(to===100){
+  // ----- Audience-Driven Gravity: Bounty check -----
+  if(state.mode==='gravity' && state.gravity.bounty && to===state.gravity.bounty){
+    state.gravity.bounty = null;
+    const bonusTo = Math.min(100, to+steps);
+    logEntry(`⭐ <b>${team.name}</b> hit the Bounty square! Double move: ${to} → ${bonusTo}.`, 'win');
+    team.pos = bonusTo;
+    saveState(); renderPawns(); renderTeams(); buildBoard();
+    if(bonusTo===100){ finishMatch(team); return; }
+  }
+  // ----- Audience-Driven Gravity: Quicksand check -----
+  if(state.mode==='gravity' && state.gravity.quicksand.includes(team.pos)){
+    state.gravity.frozen[team.id] = true;
+    logEntry(`🌀 <b>${team.name}</b> landed in Quicksand at ${team.pos} — frozen for their next turn.`, 'move');
+  }
+
+  if(team.pos===100){
     finishMatch(team);
     return;
   }
-  if(LADDERS[to]){
-    openChallenge(team, 'ladder', to, LADDERS[to]);
-  } else if(SNAKES[to]){
-    openChallenge(team, 'snake', to, SNAKES[to]);
+
+  const to2 = team.pos;
+  const ladders = activeLadders(), snakes = activeSnakes();
+
+  // ----- Shadow Grid: reveal on landing -----
+  if(state.mode==='shadow' && (ladders[to2] || snakes[to2])){
+    state.revealed[to2] = true;
+    saveState(); buildBoard();
+  }
+
+  // ----- Draft & Trade: sabotaged ladder -----
+  if(state.mode==='draft' && ladders[to2] && state.brokenLadders[to2]){
+    delete state.brokenLadders[to2];
+    logEntry(`🪜 <b>${team.name}</b> landed on a sabotaged ladder at ${to2} — it's broken, no climb.`, 'ladder');
+    saveState();
+    advanceTurn();
+    saveState(); renderAll();
+    return;
+  }
+
+  if(ladders[to2]){
+    openChallenge(team, 'ladder', to2, ladders[to2]);
+  } else if(snakes[to2]){
+    // ----- Draft & Trade: armed shield auto-blocks -----
+    if(state.mode==='draft' && team.shieldArmed){
+      team.shieldArmed = false;
+      logEntry(`🛡️ <b>${team.name}</b>'s Deflector Shield blocked the snake at ${to2} — no challenge needed.`, 'snake');
+      saveState();
+      advanceTurn();
+      saveState(); renderAll();
+      return;
+    }
+    openChallenge(team, 'snake', to2, snakes[to2]);
   } else {
     advanceTurn();
     saveState(); renderAll();
   }
 }
 
-boardEl.addEventListener('click', (e)=>{
-  const cell = e.target.closest('.cell');
-  if(!cell || !awaitingPlacement) return;
-  const sq = parseInt(cell.dataset.square,10);
-  placePawn(sq);
-});
-
 function resetDice(){
-  diceSelected=null;
-  awaitingPlacement=null;
-  boardEl.classList.remove('placing');
-  document.querySelectorAll('.die').forEach(el=>{ el.classList.remove('active'); el.style.pointerEvents='auto'; });
-  document.getElementById('lastRollVal').textContent="–";
-  document.getElementById('btnApplyRoll').disabled = true;
-  document.getElementById('placeHint').style.display = 'none';
+  btnRoll.disabled = false;
   document.getElementById('btnUndo').disabled = undoStack.length===0;
 }
 function advanceTurn(){
+  // Gravity mode: tick down modifier windows once per full turn
+  if(state.mode==='gravity'){
+    const g = state.gravity;
+    g.turnsSinceShift += 1;
+    if(g.invert){ g.invertTurnsLeft -= 1; if(g.invertTurnsLeft<=0){ g.invert=false; logEntry('🔄 Gravity reverts to normal.', 'move'); } }
+    if(g.quicksand.length){ g.quicksandTurnsLeft -= 1; if(g.quicksandTurnsLeft<=0){ g.quicksand=[]; logEntry('🌀 Quicksand dries up.', 'move'); } }
+  }
   const activeCount = state.teams.filter(t=>t.active).length;
-  if(activeCount>0) state.turnIndex = (state.turnIndex+1) % activeCount;
+  if(activeCount===0) return;
+  state.turnIndex = (state.turnIndex+1) % activeCount;
+
+  // Gravity mode: skip a frozen team's turn
+  if(state.mode==='gravity'){
+    let guard = 0;
+    while(guard < activeCount){
+      const t = currentTeam();
+      if(t && state.gravity.frozen[t.id]){
+        delete state.gravity.frozen[t.id];
+        logEntry(`🌀 <b>${t.name}</b> is thawed but skips this turn.`, 'move');
+        state.turnIndex = (state.turnIndex+1) % activeCount;
+        guard++;
+      } else break;
+    }
+  }
 }
 function undoLast(){
   const prev = undoStack.pop();
   if(!prev) return;
   state.teams = prev.teams; state.turnIndex = prev.turnIndex; state.history = prev.history;
-  saveState(); renderAll();
+  if(prev.revealed) state.revealed = prev.revealed;
+  if(prev.brokenLadders) state.brokenLadders = prev.brokenLadders;
+  if(prev.gravity) state.gravity = prev.gravity;
+  saveState(); buildBoard(); renderAll();
   document.getElementById('btnUndo').disabled = undoStack.length===0;
   toast("Last move undone.");
 }
+
 
 /* ============================= CHALLENGE MODAL ============================= */
 const modalBg = document.getElementById('challengeModalBg');
@@ -844,7 +1189,8 @@ timerFg.setAttribute('stroke-dasharray', RING_CIRC);
 
 function openChallenge(team, type, at, target){
   pendingChallenge = {teamId:team.id, type, at, target};
-  chTitle.textContent = (type==='ladder' ? 'Ladder Challenge — ' : 'Snake Defense — ') + team.name;
+  const shadowTrapdoor = state.mode==='shadow' && type==='snake';
+  chTitle.textContent = (type==='ladder' ? 'Ladder Challenge — ' : (shadowTrapdoor ? 'Trapdoor! — ' : 'Snake Defense — ')) + team.name;
   chSub.textContent = type==='ladder'
     ? `Complete the field challenge to climb from ${at} to ${target}. Fail, and the team stays on ${at}.`
     : `Complete the field challenge to block the snake and stay on ${at}. Fail, and the team slides down to ${target}.`;
@@ -970,20 +1316,33 @@ function renderLeaderboard(){
 document.getElementById('btnResetMatch').addEventListener('click', ()=>{
   if(!confirm("Reset the current match? Team names are kept, positions and history clear.")) return;
   state.started=false; state.finished=false; state.turnIndex=0; state.history=[];
-  state.teams.forEach(t=>{ t.pos=1; t.active=true; });
+  state.teams.forEach(t=>{
+    t.pos=1; t.active=true;
+    t.inventory = {shield:1, sabotage:1, swapper:1, loadedDie:1};
+    t.shieldArmed = false;
+  });
+  state.revealed = {};
+  state.brokenLadders = {};
+  state.gravity = {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
+  armedLoadedDie = null;
   undoStack=[];
   resetDice();
-  saveState(); renderAll();
+  saveState(); buildBoard(); renderAll();
   toast("Match reset.");
 });
 document.getElementById('btnClearAll').addEventListener('click', ()=>{
   if(!confirm("Clear ALL data — teams, history, and the leaderboard? This cannot be undone.")) return;
   localStorage.removeItem(LS_STATE); localStorage.removeItem(LS_LEADERBOARD); localStorage.removeItem(LS_LOG);
-  state = {teams:[], turnIndex:0, started:false, finished:false, history:[]};
+  state = {
+    teams:[], turnIndex:0, started:false, finished:false, history:[],
+    mode:'classic', revealed:{}, brokenLadders:{},
+    gravity:{turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}}
+  };
   leaderboard = {};
   undoStack=[];
+  armedLoadedDie = null;
   saveState(); saveLeaderboard();
-  renderAll();
+  buildBoard(); renderAll();
   toast("All data cleared.");
 });
 document.getElementById('btnClearLb').addEventListener('click', ()=>{
@@ -993,7 +1352,8 @@ document.getElementById('btnClearLb').addEventListener('click', ()=>{
   toast("Leaderboard cleared.");
 });
 document.getElementById('btnRules').addEventListener('click', ()=>{
-  alert("Host workflow:\n\n1. Add teams, then Start match.\n2. Roll the giant physical dice on the field.\n3. Tap the matching number here, then Apply roll & move.\n4. If a pawn lands on a ladder or snake, run the field challenge — mark it Completed or Failed within 15 seconds.\n5. First team to land exactly on 100 wins and is recorded to the leaderboard.\n\nAll progress saves automatically, so a page refresh won't lose the match.");
+  const modeInfo = MODES.map(m=>`• ${m.name}: ${m.desc}`).join('\n');
+  alert("Host workflow:\n\n1. Pick a Game Mode, add teams, then Start match.\n2. Tap Roll dice — it's a true random roll, animated for the crowd.\n3. The team auto-moves that many squares.\n4. Landing on a ladder or snake runs a 15-second field challenge — mark it Completed or Failed.\n5. First team to land exactly on 100 wins.\n\nGame Modes:\n" + modeInfo + "\n\nAll progress saves automatically, so a page refresh won't lose the match.");
 });
 
 /* ============================= TOAST ============================= */
@@ -1022,8 +1382,10 @@ function renderAll(){
   renderLog();
   renderLeaderboard();
   renderStatus();
+  renderModeSelector();
+  renderModePanels();
   document.getElementById('btnUndo').disabled = undoStack.length===0;
-  document.getElementById('btnApplyRoll').disabled = true;
+  resetDice();
 }
 
 buildBoard();
