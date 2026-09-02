@@ -3,643 +3,248 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Field Day 100 ‚Äî Giant Snakes &amp; Ladders Console</title>
+<title>Field Day 100 - Giant Snakes & Ladders Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --turf-1:#0f3d2e;
-    --turf-2:#124a37;
-    --chalk:#f6f3e9;
-    --chalk-dim:#d8d2c0;
-    --ink:#0f1a14;
-    --amber:#e2a63b;
-    --amber-dim:#8a6a2c;
-    --ladder:#2e78a6;
-    --ladder-dim:#173445;
-    --snake:#c0463b;
-    --snake-dim:#4a1c17;
-    --line:rgba(246,243,233,0.14);
-    --panel:#123a2c;
-    --panel-2:#0d2e22;
-    --radius:6px;
-    --shadow:0 10px 30px rgba(0,0,0,0.35);
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:
-      radial-gradient(1200px 700px at 15% -10%, #17513e 0%, transparent 60%),
-      linear-gradient(180deg,var(--turf-1),var(--turf-2) 60%,#0a2e21 100%);
-    color:var(--chalk);
-    font-family:'Inter',sans-serif;
-    min-height:100vh;
-    background-attachment:fixed;
-  }
-  .wrap{
-    max-width:1440px;
-    margin:0 auto;
-    padding:22px 22px 60px;
-  }
-  /* ---------- HEADER ---------- */
-  header.top{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:20px;
-    padding-bottom:18px;
-    border-bottom:2px solid var(--line);
-    margin-bottom:22px;
-    flex-wrap:wrap;
-  }
-  .brand{display:flex;align-items:baseline;gap:14px;}
-  .brand .num{
-    font-family:'Anton',sans-serif;
-    font-size:54px;
-    line-height:1;
-    color:var(--amber);
-    letter-spacing:1px;
-  }
-  .brand h1{
-    font-family:'Anton',sans-serif;
-    font-weight:400;
-    font-size:26px;
-    letter-spacing:0.5px;
-    margin:0;
-    color:var(--chalk);
-  }
-  .brand .tag{
-    font-size:12.5px;
-    color:var(--chalk-dim);
-    display:block;
-    margin-top:2px;
-    font-weight:500;
-  }
-  .top-actions{display:flex;gap:10px;flex-wrap:wrap;}
-  .btn{
-    font-family:'Inter',sans-serif;
-    font-weight:700;
-    font-size:13px;
-    border:1.5px solid var(--line);
-    background:rgba(246,243,233,0.04);
-    color:var(--chalk);
-    padding:9px 14px;
-    border-radius:var(--radius);
-    cursor:pointer;
-    transition:.15s ease;
-  }
-  .btn:hover{border-color:var(--amber);color:var(--amber);}
-  .btn.primary{background:var(--amber);border-color:var(--amber);color:#241a05;}
-  .btn.primary:hover{background:#f0b757;color:#241a05;}
-  .btn.danger{border-color:var(--snake);color:#f3b6ae;}
-  .btn.danger:hover{background:var(--snake);color:#fff;}
-  .btn:disabled{opacity:.35;cursor:not-allowed;}
-  .btn.small{padding:6px 10px;font-size:12px;}
-
-  /* ---------- LAYOUT ---------- */
-  .layout{
-    display:grid;
-    grid-template-columns:minmax(0,1.55fr) minmax(320px,0.95fr);
-    gap:22px;
-    align-items:start;
-  }
-  @media(max-width:980px){ .layout{grid-template-columns:1fr;} }
-
-  .panel{
-    background:linear-gradient(180deg,var(--panel),var(--panel-2));
-    border:1px solid var(--line);
-    border-radius:10px;
-    box-shadow:var(--shadow);
-    padding:18px;
-  }
-  .panel h2{
-    font-family:'Anton',sans-serif;
-    font-weight:400;
-    font-size:16px;
-    letter-spacing:.5px;
-    margin:0 0 14px;
-    color:var(--amber);
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-  }
-  .panel + .panel{margin-top:22px;}
-
-  /* ---------- BOARD ---------- */
-  #boardHolder{position:relative;width:100%;}
-  #board{
-    display:grid;
-    grid-template-columns:repeat(10,1fr);
-    grid-template-rows:repeat(10,1fr);
-    width:100%;
-    aspect-ratio:1/1;
-    border-radius:8px;
-    overflow:hidden;
-    border:3px solid #0a2118;
-    background:#0e3527;
-  }
-  .cell{
-    position:relative;
-    display:flex;
-    align-items:flex-start;
-    justify-content:flex-end;
-    padding:4px 6px;
-    font-family:'JetBrains Mono',monospace;
-    font-size:11px;
-    font-weight:700;
-    color:rgba(246,243,233,0.55);
-    border:1px solid rgba(246,243,233,0.05);
-  }
-  .cell:nth-child(odd){background:rgba(246,243,233,0.02);}
-  .cell.finish{color:var(--amber);}
-  .cell.finish::after{
-    content:"üèÅ";
-    position:absolute;
-    left:6px;bottom:4px;
-    font-size:14px;
-  }
-  svg#overlay{
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    pointer-events:none;
-  }
-  .snakeHead,.snakeTail,.ladderTop,.ladderBottom{
-    position:absolute;
-    width:15%;
-    height:15%;
-    border-radius:50%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:.6vw;
-    pointer-events:none;
-  }
-  .badge{
-    position:absolute;
-    font-family:'JetBrains Mono',monospace;
-    font-weight:700;
-    font-size:10px;
-    padding:1px 4px;
-    border-radius:3px;
-    pointer-events:none;
-  }
-  .badge.snake{background:var(--snake);color:#fff;}
-  .badge.ladder{background:var(--ladder);color:#fff;}
-
-  .pawn{
-    position:absolute;
-    width:5.6%;
-    height:5.6%;
-    border-radius:50%;
-    border:2px solid rgba(0,0,0,0.5);
-    box-shadow:0 3px 8px rgba(0,0,0,0.5);
-    transition:left .45s cubic-bezier(.4,0,.2,1), top .45s cubic-bezier(.4,0,.2,1);
-    z-index:5;
-    display:flex;align-items:center;justify-content:center;
-    font-size:.55vw;font-weight:800;color:#fff;
-  }
-
-  /* ---------- LEGEND ---------- */
-  .legend{display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;font-size:12px;color:var(--chalk-dim);}
-  .legend span{display:inline-flex;align-items:center;gap:6px;}
-  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
-
-  /* ---------- TEAMS / TURN ---------- */
-  .turn-banner{
-    display:flex;align-items:center;gap:12px;
-    background:rgba(0,0,0,0.2);
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    padding:12px 14px;
-    margin-bottom:14px;
-  }
-  .turn-banner .swatch{width:22px;height:22px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);flex:none;}
-  .turn-banner .label{font-size:11px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:1px;}
-  .turn-banner .name{font-family:'Anton',sans-serif;font-size:20px;}
-
-  .team-row{
-    display:flex;align-items:center;gap:10px;
-    padding:8px 10px;
-    border-radius:var(--radius);
-    background:rgba(0,0,0,0.15);
-    margin-bottom:8px;
-  }
-  .team-row .swatch{width:16px;height:16px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,.3);}
-  .team-row input[type=text]{
-    flex:1;
-    background:transparent;border:none;color:var(--chalk);
-    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;
-    outline:none;
-  }
-  .team-row .pos{
-    font-family:'JetBrains Mono',monospace;
-    font-size:12px;color:var(--chalk-dim);
-    min-width:44px;text-align:right;
-  }
-  .team-row .rm{background:none;border:none;color:var(--chalk-dim);cursor:pointer;font-size:14px;}
-  .team-row .rm:hover{color:var(--snake);}
-
-  /* dice */
-  .dice-area{
-    display:flex;flex-direction:column;align-items:center;gap:14px;
-    background:rgba(0,0,0,0.2);
-    padding:18px;border-radius:var(--radius);
-    margin:6px 0 4px;
-  }
-  .die-big{
-    width:76px;height:76px;
-    background:var(--chalk);
-    color:var(--ink);
-    border-radius:12px;
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Anton',sans-serif;font-size:38px;
-    box-shadow:0 6px 16px rgba(0,0,0,0.4);
-    border:2px solid transparent;
-    transition:transform .08s;
-  }
-  .die-big.rolling{border-color:var(--amber);}
-  .row{display:flex;gap:8px;}
-  .row > *{flex:1;}
-  hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0;}
-
-  /* history log */
-  #logList{
-    max-height:220px;overflow-y:auto;
-    display:flex;flex-direction:column-reverse;
-    gap:6px;font-size:12.5px;
-  }
-  #logList .entry{
-    background:rgba(0,0,0,0.18);
-    padding:7px 9px;border-radius:5px;
-    border-left:3px solid var(--line);
-    color:var(--chalk-dim);
-  }
-  #logList .entry b{color:var(--chalk);}
-  #logList .entry.snake{border-left-color:var(--snake);}
-  #logList .entry.ladder{border-left-color:var(--ladder);}
-  #logList .entry.win{border-left-color:var(--amber);}
-
-  /* leaderboard */
-  table.lb{width:100%;border-collapse:collapse;font-size:13px;}
-  table.lb th{
-    text-align:left;font-size:11px;letter-spacing:.5px;color:var(--chalk-dim);
-    text-transform:uppercase;padding:4px 6px;border-bottom:1px solid var(--line);
-  }
-  table.lb td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.05);}
-  table.lb tr:last-child td{border-bottom:none;}
-
-  /* modal */
-  .modal-bg{
-    position:fixed;inset:0;background:rgba(6,14,10,0.78);
-    display:flex;align-items:center;justify-content:center;
-    z-index:100;backdrop-filter:blur(2px);
-  }
-  .modal-bg.hidden{display:none;}
-  .modal{
-    width:min(440px,92vw);
-    background:linear-gradient(180deg,#163f30,#0e2a20);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:26px;
-    box-shadow:0 20px 60px rgba(0,0,0,0.6);
-    text-align:center;
-  }
-  .modal.snakeType{border-top:5px solid var(--snake);}
-  .modal.ladderType{border-top:5px solid var(--ladder);}
-  .modal h3{
-    font-family:'Anton',sans-serif;font-size:24px;margin:4px 0 6px;
-    letter-spacing:.5px;
-  }
-  .modal p.sub{color:var(--chalk-dim);font-size:13.5px;margin:0 0 18px;}
-  .timer-ring{
-    width:120px;height:120px;margin:0 auto 18px;position:relative;
-  }
-  .timer-ring svg{transform:rotate(-90deg);}
-  .timer-ring .bg{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8;}
-  .timer-ring .fg{fill:none;stroke:var(--amber);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s linear;}
-  .timer-ring .num{
-    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    font-family:'Anton',sans-serif;font-size:34px;
-  }
-  .modal-actions{display:flex;gap:10px;margin-top:6px;}
-  .modal-actions .btn{flex:1;padding:12px;font-size:14px;}
-
-  .victory-bg{position:fixed;inset:0;background:rgba(6,14,10,0.9);display:flex;align-items:center;justify-content:center;z-index:120;}
-  .victory-bg.hidden{display:none;}
-  .victory{
-    text-align:center;
-    padding:40px 50px;
-    background:linear-gradient(180deg,#1d5a41,#0e2a20);
-    border:2px solid var(--amber);
-    border-radius:16px;
-    box-shadow:0 30px 80px rgba(0,0,0,.6);
-  }
-  .victory .medal{font-size:56px;}
-  .victory h2{font-family:'Anton',sans-serif;font-size:38px;color:var(--amber);margin:6px 0;}
-  .victory p{color:var(--chalk-dim);margin:0 0 20px;}
-
-  .toast{
-    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:var(--ink);color:var(--chalk);padding:10px 18px;
-    border-radius:20px;font-size:13px;font-weight:600;
-    box-shadow:0 8px 24px rgba(0,0,0,.4);
-    z-index:200;opacity:0;pointer-events:none;transition:.25s;
-  }
-  .toast.show{opacity:1;transform:translate(-50%,-6px);}
-
-  .empty-note{font-size:12.5px;color:var(--chalk-dim);padding:10px 4px;}
-  select, input[type=text]{color-scheme:dark;}
-  input[type=text].field{
-    background:rgba(0,0,0,0.25);border:1px solid var(--line);
-    border-radius:5px;color:var(--chalk);padding:8px 10px;font-size:13px;width:100%;
-  }
-
-  /* mode selector */
-  .mode-list{display:flex;flex-direction:column;gap:8px;}
-  .mode-opt{
-    display:flex;align-items:center;gap:10px;
-    padding:9px 10px;border-radius:var(--radius);
-    background:rgba(0,0,0,0.15);border:1.5px solid transparent;
-    cursor:pointer;
-  }
-  .mode-opt.active{border-color:var(--amber);background:rgba(226,166,59,0.1);}
-  .mode-opt input{accent-color:var(--amber);}
-  .mode-opt span{font-weight:600;font-size:13.5px;}
-  .mode-opt.disabledOpt{opacity:.5;cursor:not-allowed;}
-
-  /* shadow master key */
-  .master-key{font-size:12px;color:var(--chalk-dim);line-height:1.7;filter:blur(0);}
-  .master-key.hidden{filter:blur(6px);user-select:none;}
-  .master-key .k-ladder{color:var(--ladder);}
-  .master-key .k-snake{color:var(--snake);}
-
-  /* draft inventory */
-  .item-row{
-    display:flex;align-items:center;justify-content:space-between;
-    background:rgba(0,0,0,0.15);padding:8px 10px;border-radius:5px;margin-bottom:6px;
-    font-size:13px;
-  }
-  .item-row .qty{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;}
-  .item-row button{flex:0 0 auto;}
-  select.field{
-    background:rgba(0,0,0,0.25);border:1px solid var(--line);
-    border-radius:5px;color:var(--chalk);padding:8px 10px;font-size:13px;width:100%;
-  }
+:root{--turf-1:#0a2e1f;--turf-2:#0f3d2e;--chalk:#f8f5ed;--chalk-dim:#c4bfb0;--chalk-muted:#8a8475;--ink:#08120d;--amber:#e8a93a;--amber-light:#f7c966;--amber-dark:#b8832a;--ladder:#3a8bc4;--ladder-light:#5fa8db;--snake:#d44a3e;--snake-light:#e86e62;--line:rgba(248,245,237,0.12);--line-bright:rgba(248,245,237,0.22);--panel:#0f3528;--panel-light:#14402f;--panel-2:#0a2818;--radius:8px;--radius-lg:12px;--shadow:0 12px 40px rgba(0,0,0,0.4);--shadow-lg:0 20px 60px rgba(0,0,0,0.5);--glow-amber:0 0 20px rgba(232,169,58,0.3);--glow-ladder:0 0 15px rgba(58,139,196,0.3);--glow-snake:0 0 15px rgba(212,74,62,0.3);}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{margin:0;padding:0;}
+body{background:radial-gradient(1000px 600px at 10% -5%,#1a5c45 0%,transparent 50%),radial-gradient(800px 500px at 90% 100%,#0d3025 0%,transparent 50%),linear-gradient(180deg,var(--turf-1) 0%,var(--turf-2) 50%,var(--turf-1) 100%);color:var(--chalk);font-family:'Inter',system-ui,sans-serif;min-height:100vh;background-attachment:fixed;overflow-x:hidden;}
+.wrap{max-width:1520px;margin:0 auto;padding:24px 28px 80px;}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:20px;border-bottom:2px solid var(--line-bright);margin-bottom:28px;flex-wrap:wrap;position:relative;}
+header.top::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber) 0%,transparent 60%);}
+.brand{display:flex;align-items:baseline;gap:16px;}
+.brand .num{font-family:'Anton',sans-serif;font-size:62px;line-height:1;color:var(--amber);letter-spacing:2px;text-shadow:0 2px 8px rgba(232,169,58,0.4);}
+.brand h1{font-family:'Anton',sans-serif;font-weight:400;font-size:28px;letter-spacing:1px;margin:0;color:var(--chalk);text-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.brand .tag{font-size:13px;color:var(--chalk-dim);display:block;margin-top:4px;font-weight:500;letter-spacing:0.5px;}
+.top-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.btn{font-family:'Inter',sans-serif;font-weight:700;font-size:13.5px;border:1.5px solid var(--line);background:rgba(248,245,237,0.04);color:var(--chalk);padding:10px 16px;border-radius:var(--radius);cursor:pointer;transition:all 0.2s ease;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity 0.2s;}
+.btn:hover::before{opacity:1;}
+.btn:hover{border-color:var(--amber);color:var(--amber);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3);}
+.btn:active{transform:translateY(0);}
+.btn.primary{background:linear-gradient(135deg,var(--amber),var(--amber-dark));border-color:var(--amber);color:#1a1205;box-shadow:0 4px 16px rgba(232,169,58,0.3);}
+.btn.primary:hover{background:linear-gradient(135deg,var(--amber-light),var(--amber));color:#1a1205;box-shadow:0 6px 20px rgba(232,169,58,0.4);}
+.btn.danger{border-color:var(--snake);color:var(--snake-light);}
+.btn.danger:hover{background:var(--snake);color:#fff;box-shadow:0 4px 12px rgba(212,74,62,0.4);}
+.btn:disabled{opacity:0.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+.btn.small{padding:7px 12px;font-size:12px;}
+.btn.icon{padding:8px 10px;font-size:14px;}
+.layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,0.9fr);gap:24px;align-items:start;}
+@media(max-width:1024px){.layout{grid-template-columns:1fr;}}
+.panel{background:linear-gradient(160deg,var(--panel-light),var(--panel) 40%,var(--panel-2));border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:20px;position:relative;}
+.panel h2{font-family:'Anton',sans-serif;font-weight:400;font-size:17px;letter-spacing:1px;margin:0 0 16px;color:var(--amber);display:flex;align-items:center;justify-content:space-between;text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+.panel+.panel{margin-top:24px;}
+#boardHolder{position:relative;width:100%;}
+#board{display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);width:100%;aspect-ratio:1/1;border-radius:var(--radius);overflow:hidden;border:4px solid #06150f;background:#0a2a1c;box-shadow:inset 0 2px 8px rgba(0,0,0,0.4),0 4px 20px rgba(0,0,0,0.3);}
+.cell{position:relative;display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 6px;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:rgba(248,245,237,0.5);border:1px solid rgba(248,245,237,0.04);transition:background 0.3s;}
+.cell.alt{background:rgba(248,245,237,0.025);}
+.cell:hover{background:rgba(232,169,58,0.08);}
+.cell.finish{color:var(--amber);background:rgba(232,169,58,0.08);}
+.cell.finish::after{content:"??";position:absolute;left:5px;bottom:3px;font-size:13px;}
+.cell.frozen{background:rgba(58,139,196,0.2);animation:pulseFrozen 2s ease-in-out infinite;}
+@keyframes pulseFrozen{0%,100%{background:rgba(58,139,196,0.15);}50%{background:rgba(58,139,196,0.3);}}
+svg#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.badge{position:absolute;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9px;padding:2px 5px;border-radius:4px;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,0.5);box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.badge.snake{background:var(--snake);color:#fff;}
+.badge.ladder{background:var(--ladder);color:#fff;}
+.pawn{position:absolute;width:5.4%;height:5.4%;border-radius:50%;border:2.5px solid rgba(0,0,0,0.5);box-shadow:0 4px 10px rgba(0,0,0,0.5),inset 0 -2px 4px rgba(0,0,0,0.2),inset 0 2px 4px rgba(255,255,255,0.2);transition:left 0.5s cubic-bezier(0.25,0.46,0.45,0.94),top 0.5s cubic-bezier(0.25,0.46,0.45,0.94);z-index:5;display:flex;align-items:center;justify-content:center;font-size:0.6vw;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.5);}
+.pawn.moving{animation:bounceMove 0.5s ease;}
+@keyframes bounceMove{0%{transform:scale(1);}30%{transform:scale(1.3);}60%{transform:scale(0.95);}100%{transform:scale(1);}}
+.legend{display:flex;gap:20px;margin-top:14px;flex-wrap:wrap;font-size:12.5px;color:var(--chalk-dim);}
+.legend span{display:inline-flex;align-items:center;gap:7px;}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 -1px 2px rgba(0,0,0,0.3),inset 0 1px 2px rgba(255,255,255,0.2);}
+.turn-banner{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(0,0,0,0.25),rgba(0,0,0,0.15));border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.2);}
+.turn-banner .swatch{width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,0.4);flex:none;box-shadow:0 2px 8px rgba(0,0,0,0.3),inset 0 -2px 4px rgba(0,0,0,0.2);}
+.turn-banner .label{font-size:11px;color:var(--chalk-dim);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.turn-banner .name{font-family:'Anton',sans-serif;font-size:22px;letter-spacing:0.5px;}
+.team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);background:rgba(0,0,0,0.15);margin-bottom:8px;border:1px solid transparent;transition:all 0.2s;}
+.team-row:hover{background:rgba(0,0,0,0.25);border-color:var(--line);}
+.team-row .swatch{width:18px;height:18px;border-radius:50%;flex:none;border:2px solid rgba(255,255,255,0.3);box-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.team-row input[type=text]{flex:1;background:transparent;border:none;color:var(--chalk);font-family:'Inter',sans-serif;font-weight:600;font-size:14px;outline:none;}
+.team-row input[type=text]:focus{border-bottom:1px solid var(--amber);}
+.team-row .pos{font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--chalk-dim);min-width:48px;text-align:right;}
+.team-row .frozen-badge{font-size:14px;animation:pulseFrozen 1.5s ease-in-out infinite;}
+.team-row .rm{background:none;border:none;color:var(--chalk-dim);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:all 0.2s;}
+.team-row .rm:hover{color:var(--snake);background:rgba(212,74,62,0.1);}
+.dice-area{display:flex;flex-direction:column;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(0,0,0,0.25),rgba(0,0,0,0.15));padding:20px;border-radius:var(--radius);border:1px solid var(--line);margin:8px 0 6px;}
+.die-big{width:84px;height:84px;background:linear-gradient(145deg,#fff,#e8e4d8);color:var(--ink);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:42px;box-shadow:0 8px 24px rgba(0,0,0,0.4),inset 0 -3px 6px rgba(0,0,0,0.1),inset 0 3px 6px rgba(255,255,255,0.5);border:3px solid transparent;transition:transform 0.1s,border-color 0.2s;text-shadow:0 1px 2px rgba(0,0,0,0.1);}
+.die-big.rolling{border-color:var(--amber);animation:diceShake 0.1s infinite;}
+@keyframes diceShake{0%{transform:rotate(-3deg) scale(1.05);}50%{transform:rotate(3deg) scale(0.95);}100%{transform:rotate(-3deg) scale(1.05);}}
+.die-big.bounce{animation:diceLand 0.3s ease;}
+@keyframes diceLand{0%{transform:scale(1.2);}50%{transform:scale(0.9);}100%{transform:scale(1);}}
+.row{display:flex;gap:10px;}
+.row>*{flex:1;}
+hr.sep{border:none;border-top:1px solid var(--line);margin:18px 0;}
+#logList{max-height:240px;overflow-y:auto;display:flex;flex-direction:column-reverse;gap:7px;font-size:13px;padding-right:4px;}
+#logList::-webkit-scrollbar{width:6px;}
+#logList::-webkit-scrollbar-track{background:rgba(0,0,0,0.1);border-radius:3px;}
+#logList::-webkit-scrollbar-thumb{background:var(--line-bright);border-radius:3px;}
+#logList .entry{background:rgba(0,0,0,0.2);padding:8px 10px;border-radius:6px;border-left:3px solid var(--line-bright);color:var(--chalk-dim);transition:all 0.3s;}
+#logList .entry.new{animation:logSlide 0.3s ease;}
+@keyframes logSlide{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+#logList .entry b{color:var(--chalk);font-weight:700;}
+#logList .entry.snake{border-left-color:var(--snake);background:rgba(212,74,62,0.08);}
+#logList .entry.ladder{border-left-color:var(--ladder);background:rgba(58,139,196,0.08);}
+#logList .entry.win{border-left-color:var(--amber);background:rgba(232,169,58,0.1);}
+#logList .entry .time{opacity:0.5;font-size:11px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
+table.lb{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;}
+table.lb th{text-align:left;font-size:11px;letter-spacing:0.5px;color:var(--chalk-muted);text-transform:uppercase;padding:6px 8px;border-bottom:2px solid var(--line);font-weight:600;}
+table.lb td{padding:8px;border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.2s;}
+table.lb tr:hover td{background:rgba(248,245,237,0.03);}
+table.lb tr:last-child td{border-bottom:none;}
+table.lb .lb-rank{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;width:30px;}
+table.lb .lb-wins{font-weight:700;color:var(--amber-light);}
+.modal-bg{position:fixed;inset:0;background:rgba(4,10,7,0.85);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);animation:fadeIn 0.2s ease;}
+.modal-bg.hidden{display:none;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal{width:min(460px,92vw);background:linear-gradient(160deg,#164030,#0e2a18);border:1px solid var(--line-bright);border-radius:var(--radius-lg);padding:28px;box-shadow:var(--shadow-lg);text-align:center;animation:modalSlide 0.3s ease;}
+@keyframes modalSlide{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.modal.snakeType{border-top:5px solid var(--snake);box-shadow:var(--shadow-lg),var(--glow-snake);}
+.modal.ladderType{border-top:5px solid var(--ladder);box-shadow:var(--shadow-lg),var(--glow-ladder);}
+.modal h3{font-family:'Anton',sans-serif;font-size:26px;margin:6px 0 8px;letter-spacing:0.5px;}
+.modal p.sub{color:var(--chalk-dim);font-size:14px;margin:0 0 20px;line-height:1.5;}
+.modal .team-color-bar{width:50px;height:50px;border-radius:50%;margin:0 auto 14px;border:3px solid rgba(255,255,255,0.4);box-shadow:0 4px 12px rgba(0,0,0,0.4);}
+.timer-ring{width:130px;height:130px;margin:0 auto 20px;position:relative;}
+.timer-ring svg{transform:rotate(-90deg);}
+.timer-ring .bg{fill:none;stroke:rgba(255,255,255,0.08);stroke-width:8;}
+.timer-ring .fg{fill:none;stroke:var(--amber);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s linear;filter:drop-shadow(0 0 6px rgba(232,169,58,0.5));}
+.timer-ring .num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:38px;text-shadow:0 2px 4px rgba(0,0,0,0.3);}
+.timer-ring .num.warning{color:var(--snake-light);}
+.modal-actions{display:flex;gap:12px;margin-top:8px;}
+.modal-actions .btn{flex:1;padding:14px;font-size:15px;}
+.victory-bg{position:fixed;inset:0;background:radial-gradient(circle at center,rgba(10,30,20,0.95),rgba(4,10,7,0.98));display:flex;align-items:center;justify-content:center;z-index:120;animation:fadeIn 0.3s ease;}
+.victory-bg.hidden{display:none;}
+.victory{text-align:center;padding:50px 60px;background:linear-gradient(160deg,#1d6a48,#0e2a18);border:3px solid var(--amber);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(232,169,58,0.3);animation:victoryPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);position:relative;overflow:hidden;}
+@keyframes victoryPop{0%{opacity:0;transform:scale(0.5);}100%{opacity:1;transform:scale(1);}}
+.victory::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,rgba(232,169,58,0.15),transparent 70%);pointer-events:none;}
+.victory .medal{font-size:72px;animation:bounce 1s infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.victory h2{font-family:'Anton',sans-serif;font-size:44px;color:var(--amber);margin:10px 0;letter-spacing:2px;text-shadow:0 3px 6px rgba(0,0,0,0.4);}
+.victory p{color:var(--chalk-dim);margin:0 0 24px;font-size:15px;}
+.confetti{position:fixed;width:10px;height:10px;top:-10px;z-index:150;pointer-events:none;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:linear-gradient(135deg,var(--ink),#1a2420);color:var(--chalk);padding:12px 22px;border-radius:24px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.5);z-index:200;opacity:0;pointer-events:none;transition:all 0.3s ease;border:1px solid var(--line-bright);max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.empty-note{font-size:13px;color:var(--chalk-muted);padding:12px 4px;line-height:1.5;}
+select,input[type=text]{color-scheme:dark;}
+input[type=text].field{background:rgba(0,0,0,0.3);border:1.5px solid var(--line);border-radius:var(--radius);color:var(--chalk);padding:10px 12px;font-size:13.5px;width:100%;transition:all 0.2s;}
+input[type=text].field:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(232,169,58,0.1);outline:none;}
+.mode-list{display:flex;flex-direction:column;gap:10px;}
+.mode-opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--radius);background:rgba(0,0,0,0.15);border:2px solid transparent;cursor:pointer;transition:all 0.2s;}
+.mode-opt:hover{background:rgba(0,0,0,0.25);border-color:var(--line);}
+.mode-opt.active{border-color:var(--amber);background:rgba(232,169,58,0.1);box-shadow:0 0 15px rgba(232,169,58,0.1);}
+.mode-opt input{accent-color:var(--amber);width:18px;height:18px;}
+.mode-opt span{font-weight:600;font-size:14px;}
+.mode-opt small{display:block;color:var(--chalk-muted);font-weight:400;font-size:11.5px;margin-top:2px;}
+.mode-opt.disabledOpt{opacity:0.5;cursor:not-allowed;}
+.master-key{font-size:12.5px;color:var(--chalk-dim);line-height:1.8;filter:blur(0);transition:filter 0.3s;}
+.master-key.hidden{filter:blur(7px);user-select:none;}
+.master-key .k-ladder{color:var(--ladder-light);font-weight:600;}
+.master-key .k-snake{color:var(--snake-light);font-weight:600;}
+.item-row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.15);padding:10px 12px;border-radius:var(--radius);margin-bottom:8px;font-size:13.5px;border:1px solid transparent;transition:all 0.2s;}
+.item-row:hover{background:rgba(0,0,0,0.25);border-color:var(--line);}
+.item-row .qty{font-family:'JetBrains Mono',monospace;color:var(--amber);font-weight:700;font-size:15px;}
+.item-row button{flex:0 0 auto;}
+select.field{background:rgba(0,0,0,0.3);border:1.5px solid var(--line);border-radius:var(--radius);color:var(--chalk);padding:10px 12px;font-size:13.5px;width:100%;cursor:pointer;}
+select.field:focus{border-color:var(--amber);outline:none;}
+.prompt-modal{width:min(400px,90vw);}
+.prompt-modal .prompt-title{font-family:'Anton',sans-serif;font-size:20px;color:var(--amber);margin-bottom:12px;}
+.prompt-modal .prompt-options{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+.prompt-modal .prompt-option{padding:12px 16px;border-radius:var(--radius);background:rgba(0,0,0,0.2);border:1.5px solid var(--line);cursor:pointer;transition:all 0.2s;text-align:left;font-size:14px;font-weight:600;color:var(--chalk);}
+.prompt-modal .prompt-option:hover{background:rgba(232,169,58,0.1);border-color:var(--amber);transform:translateX(4px);}
+.prompt-modal .prompt-option .opt-detail{font-size:12px;color:var(--chalk-muted);font-weight:400;margin-top:3px;}
+.sound-toggle{position:fixed;top:20px;right:20px;z-index:50;}
+.sound-toggle .btn{padding:8px 12px;font-size:16px;border-radius:50%;width:42px;height:42px;display:flex;align-items:center;justify-content:center;}
+@media(max-width:600px){.brand .num{font-size:42px;}.brand h1{font-size:20px;}.wrap{padding:16px 14px 60px;}.panel{padding:14px;}.die-big{width:68px;height:68px;font-size:34px;}.legend{gap:12px;font-size:11px;}}
 </style>
 </head>
 <body>
+<div class="sound-toggle"><button class="btn icon" id="btnSound" title="Toggle sound">??</button></div>
 <div class="wrap">
-
-  <header class="top">
-    <div class="brand">
-      <span class="num">100</span>
-      <div>
-        <h1>FIELD DAY ‚Äî GIANT SNAKES &amp; LADDERS</h1>
-        <span class="tag">Live moderator console for intramural competitions</span>
-      </div>
-    </div>
-    <div class="top-actions">
-      <button class="btn" id="btnRules">How it works</button>
-      <button class="btn danger" id="btnResetMatch">Reset match</button>
-      <button class="btn danger" id="btnClearAll">Clear all data</button>
-    </div>
-  </header>
-
-  <div class="layout">
-    <!-- LEFT: BOARD -->
-    <div>
-      <div class="panel">
-        <h2>Match Board <span id="boardStatus" style="font-family:'Inter';font-weight:700;font-size:11.5px;color:var(--chalk-dim);"></span></h2>
-        <div id="boardHolder">
-          <div id="board"></div>
-          <svg id="overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg>
-        </div>
-        <div class="legend">
-          <span><i class="dot" style="background:var(--ladder);"></i> Ladder ‚Äî climb challenge</span>
-          <span><i class="dot" style="background:var(--snake);"></i> Snake ‚Äî defense challenge</span>
-          <span><i class="dot" style="background:var(--amber);"></i> Finish (100)</span>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Roll &amp; Turn History</h2>
-        <div id="logList"><div class="empty-note">No rolls yet ‚Äî start the match to begin logging.</div></div>
-      </div>
-    </div>
-
-    <!-- RIGHT: CONTROLS -->
-    <div>
-      <div class="panel">
-        <h2>Current Turn</h2>
-        <div class="turn-banner">
-          <div class="swatch" id="turnSwatch" style="background:#555;"></div>
-          <div>
-            <div class="label">On the clock</div>
-            <div class="name" id="turnName">Add teams to begin</div>
-          </div>
-        </div>
-
-        <div class="dice-area">
-          <div class="die-big" id="dieBig">1</div>
-          <button class="btn primary" id="btnRoll" style="width:100%;">Roll dice</button>
-        </div>
-        <div class="row" style="margin-top:10px;">
-          <button class="btn" id="btnUndo" disabled>Undo last</button>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>Game Mode</h2>
-        <div id="modeList" class="mode-list"></div>
-        <p class="empty-note" id="modeDesc" style="margin-top:6px;"></p>
-      </div>
-
-      <div class="panel" id="shadowPanel" style="display:none;">
-        <h2>Master Key <button class="btn small" id="btnToggleKey">Reveal (host only)</button></h2>
-        <p class="empty-note">Board starts blank. Squares reveal only once a pawn actually lands on them.</p>
-        <div id="masterKey" class="master-key hidden"></div>
-      </div>
-
-      <div class="panel" id="draftPanel" style="display:none;">
-        <h2>Inventory ‚Äî <span id="draftTeamName">‚Äî</span></h2>
-        <div id="draftItems"></div>
-        <hr class="sep">
-        <div class="row">
-          <button class="btn" id="btnLoadedLow">Loaded die: 1‚Äì3</button>
-          <button class="btn" id="btnLoadedHigh">Loaded die: 4‚Äì6</button>
-        </div>
-        <p class="empty-note" id="loadedStatus" style="margin-top:6px;"></p>
-      </div>
-
-      <div class="panel" id="gravityPanel" style="display:none;">
-        <h2>Audience Board Shift</h2>
-        <p class="empty-note" id="shiftStatus">Shift available every 3 turns.</p>
-        <div class="row">
-          <button class="btn" id="btnInvert" disabled>Invert Gravity</button>
-          <button class="btn" id="btnQuicksand" disabled>Quicksand</button>
-          <button class="btn" id="btnBounty" disabled>Bounty</button>
-        </div>
-        <p class="empty-note" id="activeModifiers" style="margin-top:8px;"></p>
-      </div>
-
-      <div class="panel">
-        <h2>Teams</h2>
-        <div id="teamList"></div>
-        <div class="row" style="margin-top:8px;">
-          <input type="text" class="field" id="newTeamName" placeholder="New team name (e.g. Team Red)">
-          <button class="btn" id="btnAddTeam" style="flex:0 0 auto;">Add</button>
-        </div>
-        <hr class="sep">
-        <button class="btn primary" id="btnStartMatch" style="width:100%;">Start match</button>
-      </div>
-
-      <div class="panel">
-        <h2>Leaderboard <button class="btn small" id="btnClearLb">Clear history</button></h2>
-        <table class="lb">
-          <thead><tr><th>Team</th><th>Wins</th><th>Losses</th><th>Matches</th></tr></thead>
-          <tbody id="lbBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+<header class="top">
+<div class="brand"><span class="num">100</span><div><h1>FIELD DAY ó GIANT SNAKES &amp; LADDERS</h1><span class="tag">Live moderator console for intramural competitions</span></div></div>
+<div class="top-actions"><button class="btn" id="btnRules">How it works</button><button class="btn danger" id="btnResetMatch">Reset match</button><button class="btn danger" id="btnClearAll">Clear all data</button></div>
+</header>
+<div class="layout">
+<div>
+<div class="panel"><h2>Match Board <span id="boardStatus" style="font-family:'Inter';font-weight:600;font-size:12px;color:var(--chalk-muted);letter-spacing:0.5px;"></span></h2><div id="boardHolder"><div id="board"></div><svg id="overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg></div><div class="legend"><span><i class="dot" style="background:var(--ladder);"></i> Ladder ó climb challenge</span><span><i class="dot" style="background:var(--snake);"></i> Snake ó defense challenge</span><span><i class="dot" style="background:var(--amber);"></i> Finish (100)</span></div></div>
+<div class="panel"><h2>Roll &amp; Turn History</h2><div id="logList"><div class="empty-note">No rolls yet ó start the match to begin logging.</div></div></div>
 </div>
-
-<!-- CHALLENGE MODAL -->
-<div class="modal-bg hidden" id="challengeModalBg">
-  <div class="modal" id="challengeModal">
-    <h3 id="chTitle">Ladder Challenge</h3>
-    <p class="sub" id="chSub">Team must complete the physical challenge before time runs out.</p>
-    <div class="timer-ring">
-      <svg width="120" height="120" viewBox="0 0 120 120">
-        <circle class="bg" cx="60" cy="60" r="52"></circle>
-        <circle class="fg" id="timerFg" cx="60" cy="60" r="52" stroke-dasharray="326.7" stroke-dashoffset="0"></circle>
-      </svg>
-      <div class="num" id="timerNum">15</div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn primary" id="btnChComplete">Mark Completed</button>
-      <button class="btn danger" id="btnChFail">Mark Failed</button>
-    </div>
-  </div>
+<div>
+<div class="panel"><h2>Current Turn</h2><div class="turn-banner"><div class="swatch" id="turnSwatch" style="background:#555;"></div><div><div class="label">On the clock</div><div class="name" id="turnName">Add teams to begin</div></div></div><div class="dice-area"><div class="die-big" id="dieBig">1</div><button class="btn primary" id="btnRoll" style="width:100%;">Roll dice</button></div><div class="row" style="margin-top:12px;"><button class="btn" id="btnUndo" disabled>Undo last</button></div></div>
+<div class="panel"><h2>Game Mode</h2><div id="modeList" class="mode-list"></div><p class="empty-note" id="modeDesc" style="margin-top:8px;"></p></div>
+<div class="panel" id="shadowPanel" style="display:none;"><h2>Master Key <button class="btn small" id="btnToggleKey">Reveal (host only)</button></h2><p class="empty-note">Board starts blank. Squares reveal only once a pawn actually lands on them.</p><div id="masterKey" class="master-key hidden"></div></div>
+<div class="panel" id="draftPanel" style="display:none;"><h2>Inventory ó <span id="draftTeamName">ó</span></h2><div id="draftItems"></div><hr class="sep"><div class="row"><button class="btn" id="btnLoadedLow">Loaded die: 1ñ3</button><button class="btn" id="btnLoadedHigh">Loaded die: 4ñ6</button></div><p class="empty-note" id="loadedStatus" style="margin-top:8px;"></p></div>
+<div class="panel" id="gravityPanel" style="display:none;"><h2>Audience Board Shift</h2><p class="empty-note" id="shiftStatus">Shift available every 3 turns.</p><div class="row"><button class="btn" id="btnInvert" disabled>Invert Gravity</button><button class="btn" id="btnQuicksand" disabled>Quicksand</button><button class="btn" id="btnBounty" disabled>Bounty</button></div><p class="empty-note" id="activeModifiers" style="margin-top:10px;"></p></div>
+<div class="panel"><h2>Teams</h2><div id="teamList"></div><div class="row" style="margin-top:10px;"><input type="text" class="field" id="newTeamName" placeholder="New team name (e.g. Team Red)"><button class="btn" id="btnAddTeam" style="flex:0 0 auto;">Add</button></div><hr class="sep"><button class="btn primary" id="btnStartMatch" style="width:100%;">Start match</button></div>
+<div class="panel"><h2>Leaderboard <button class="btn small" id="btnClearLb">Clear history</button></h2><table class="lb"><thead><tr><th></th><th>Team</th><th>Wins</th><th>Losses</th><th>Matches</th></tr></thead><tbody id="lbBody"></tbody></table></div>
 </div>
-
-<!-- VICTORY -->
-<div class="victory-bg hidden" id="victoryBg">
-  <div class="victory">
-    <div class="medal">üèÜ</div>
-    <h2 id="victoryName">TEAM WINS</h2>
-    <p>Reached square 100 first. Recorded to the leaderboard.</p>
-    <button class="btn primary" id="btnVictoryClose">New match</button>
-  </div>
 </div>
-
+</div>
+<div class="modal-bg hidden" id="challengeModalBg"><div class="modal" id="challengeModal"><div class="team-color-bar" id="chTeamColor"></div><h3 id="chTitle">Ladder Challenge</h3><p class="sub" id="chSub">Team must complete the physical challenge before time runs out.</p><div class="timer-ring"><svg width="130" height="130" viewBox="0 0 130 130"><circle class="bg" cx="65" cy="65" r="55"></circle><circle class="fg" id="timerFg" cx="65" cy="65" r="55"></circle></svg><div class="num" id="timerNum">15</div></div><div class="modal-actions"><button class="btn primary" id="btnChComplete">Mark Completed</button><button class="btn danger" id="btnChFail">Mark Failed</button></div></div></div>
+<div class="modal-bg hidden" id="promptModalBg"><div class="modal prompt-modal" id="promptModal"><div class="prompt-title" id="promptTitle">Choose an option</div><div class="prompt-options" id="promptOptions"></div><div class="modal-actions"><button class="btn" id="promptCancel">Cancel</button></div></div></div>
+<div class="victory-bg hidden" id="victoryBg"><div class="victory"><div class="medal">??</div><h2 id="victoryName">TEAM WINS</h2><p>Reached square 100 first. Recorded to the leaderboard.</p><button class="btn primary" id="btnVictoryClose">New match</button></div></div>
 <div class="toast" id="toast"></div>
-
-<script>
-(function(){
+<script>(function(){
 "use strict";
 
-/* ============================= CONSTANTS ============================= */
-const LS_STATE = "snl_game_state_v1";
-const LS_LEADERBOARD = "snl_leaderboard_v1";
-const LS_LOG = "snl_log_v1";
+const LS_STATE = "snl_game_state_v2";
+const LS_LEADERBOARD = "snl_leaderboard_v2";
 
-const BASE_SNAKES = { 98:37, 95:56, 89:53, 74:47, 62:19, 54:34, 17:4 };
-const BASE_LADDERS = { 3:20, 8:29, 20:41, 27:56, 39:63, 47:68, 63:81, 71:91 };
-
-const TEAM_COLORS = ["#c0463b","#2e78a6","#e2a63b","#5a9e6f","#9a5bc4","#c46b9a","#4c7bd9","#c48b3b"];
+const BASE_SNAKES = {98:37,95:56,89:53,74:47,62:19,54:34,17:4};
+const BASE_LADDERS = {3:20,8:29,20:41,27:56,39:63,47:68,63:81,71:91};
+const TEAM_COLORS = ["#d44a3e","#3a8bc4","#e8a93a","#5a9e6f","#9a5bc4","#c46b9a","#4c7bd9","#c48b3b"];
 
 const MODES = [
-  {id:'classic', name:'Classic', desc:'Standard rules ‚Äî visible board, roll and move, ladder/snake challenges.'},
-  {id:'shadow', name:'The Shadow Grid', desc:'Board starts blank. Snakes, ladders, and trapdoors are only revealed once a team actually lands on them ‚Äî the host holds the master key.'},
-  {id:'draft', name:'Draft & Trade', desc:'Each team starts with a Deflector Shield, Ladder Sabotage, Swapper, and a Loaded Die charge to use strategically.'},
-  {id:'gravity', name:'Audience-Driven Gravity', desc:'Every 3 turns, the host reads out the crowd\'s poll result and applies a Board Shift: Invert Gravity, Quicksand, or Bounty.'}
+  {id:'classic',name:'Classic',desc:'Standard rules ó visible board, roll and move, ladder/snake challenges.'},
+  {id:'shadow',name:'The Shadow Grid',desc:'Board starts blank. Snakes, ladders, and trapdoors are only revealed once a team actually lands on them ó the host holds the master key.'},
+  {id:'draft',name:'Draft & Trade',desc:'Each team starts with a Deflector Shield, Ladder Sabotage, Swapper, and a Loaded Die charge to use strategically.'},
+  {id:'gravity',name:'Audience-Driven Gravity',desc:'Every 3 turns, the host reads out the crowd\'s poll result and applies a Board Shift: Invert Gravity, Quicksand, or Bounty.'}
 ];
 
-/* Active snake/ladder maps ‚Äî respects Gravity mode's Invert effect */
-function activeSnakes(){
-  if(state.mode==='gravity' && state.gravity && state.gravity.invert) return BASE_LADDERS;
-  return BASE_SNAKES;
-}
-function activeLadders(){
-  if(state.mode==='gravity' && state.gravity && state.gravity.invert) return BASE_SNAKES;
-  return BASE_LADDERS;
-}
+function activeSnakes(){if(state.mode==='gravity'&&state.gravity&&state.gravity.invert)return BASE_LADDERS;return BASE_SNAKES;}
+function activeLadders(){if(state.mode==='gravity'&&state.gravity&&state.gravity.invert)return BASE_SNAKES;return BASE_LADDERS;}
 
-/* ============================= STATE ============================= */
-let state = loadState() || {
-  teams: [],           // {id,name,color,pos,active,inventory:{shield,sabotage,swapper,loadedDie}}
-  turnIndex: 0,
-  started: false,
-  finished: false,
-  history: [],          // {teamId, roll, from, to, event}
-  mode: 'classic',
-  revealed: {},          // shadow mode: square -> true once revealed
-  brokenLadders: {},     // draft mode: square -> true (sabotaged, one-time)
-  gravity: {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}}
-};
-if(!state.mode) state.mode='classic';
-if(!state.revealed) state.revealed={};
-if(!state.brokenLadders) state.brokenLadders={};
-if(!state.gravity) state.gravity={turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
+let state = loadState() || {teams:[],turnIndex:0,started:false,finished:false,history:[],log:[],mode:'classic',revealed:{},brokenLadders:{},gravity:{turnsSinceShift:0,invert:false,invertTurnsLeft:0,quicksand:[],quicksandTurnsLeft:0,bounty:null,frozen:{}}};
+if(!state.mode)state.mode='classic';
+if(!state.revealed)state.revealed={};
+if(!state.brokenLadders)state.brokenLadders={};
+if(!state.gravity)state.gravity={turnsSinceShift:0,invert:false,invertTurnsLeft:0,quicksand:[],quicksandTurnsLeft:0,bounty:null,frozen:{}};
+if(!state.log)state.log=[];
+if(!state.history)state.history=[];
 
-let leaderboard = loadLeaderboard() || {}; // name -> {wins,losses,matches}
-
-let pendingChallenge = null; // {teamId, type:'snake'|'ladder', from, to}
+let leaderboard = loadLeaderboard() || {};
+let pendingChallenge = null;
 let timerInterval = null;
 let undoStack = [];
-let armedLoadedDie = null; // 'low' | 'high' | null (per-turn, not persisted ‚Äî host arms right before rolling)
+let armedLoadedDie = null;
+let soundEnabled = true;
+let audioCtx = null;
 
-/* ============================= PERSISTENCE ============================= */
-function saveState(){ localStorage.setItem(LS_STATE, JSON.stringify(state)); }
-function loadState(){ try{ return JSON.parse(localStorage.getItem(LS_STATE)); }catch(e){ return null; } }
-function saveLeaderboard(){ localStorage.setItem(LS_LEADERBOARD, JSON.stringify(leaderboard)); }
-function loadLeaderboard(){ try{ return JSON.parse(localStorage.getItem(LS_LEADERBOARD)); }catch(e){ return null; } }
+function saveState(){localStorage.setItem(LS_STATE,JSON.stringify(state));}
+function loadState(){try{return JSON.parse(localStorage.getItem(LS_STATE));}catch(e){return null;}}
+function saveLeaderboard(){localStorage.setItem(LS_LEADERBOARD,JSON.stringify(leaderboard));}
+function loadLeaderboard(){try{return JSON.parse(localStorage.getItem(LS_LEADERBOARD));}catch(e){return null;}}
 
-/* ============================= BOARD GEOMETRY ============================= */
-// returns {row, col} (0-indexed, row0 = bottom) for square 1..100
-function squareToRC(n){
-  const row = Math.floor((n-1)/10);
-  let col = (n-1)%10;
-  if(row % 2 === 1) col = 9 - col;
-  return {row, col};
-}
-// grid-row/col for CSS grid (row1 at top = square 91-100)
-function squareToGridPos(n){
-  const {row,col} = squareToRC(n);
-  const gridRow = 10 - row; // row0(bottom) -> gridRow10
-  const gridCol = col + 1;
-  return {gridRow, gridCol};
-}
-function squareCenterPct(n){
-  const {row,col} = squareToRC(n);
-  const gridRowFromTop = 9 - row; // 0-indexed from top
-  const x = (col + 0.5) * 10;
-  const y = (gridRowFromTop + 0.5) * 10;
-  return {x, y};
-}
+function squareToRC(n){const row=Math.floor((n-1)/10);let col=(n-1)%10;if(row%2===1)col=9-col;return{row,col};}
+function squareCenterPct(n){const{row,col}=squareToRC(n);const gridRowFromTop=9-row;const x=(col+0.5)*10;const y=(gridRowFromTop+0.5)*10;return{x,y};}
 
-/* ============================= BUILD BOARD ============================= */
-const boardEl = document.getElementById('board');
-const overlayEl = document.getElementById('overlay');
+const boardEl=document.getElementById('board');
+const overlayEl=document.getElementById('overlay');
 
 function buildBoard(){
-  boardEl.innerHTML = "";
-  for(let gridRow=1; gridRow<=10; gridRow++){
-    for(let gridCol=1; gridCol<=10; gridCol++){
-      // find which square maps here
-      const rowFromBottom = 10-gridRow;
-      let colIdx = gridCol-1;
-      if(rowFromBottom % 2 === 1) colIdx = 9-colIdx;
-      const n = rowFromBottom*10 + colIdx + 1;
-      const div = document.createElement('div');
-      div.className = 'cell' + (n===100 ? ' finish':'');
-      div.style.gridRow = gridRow;
-      div.style.gridColumn = gridCol;
-      div.textContent = n;
-      div.dataset.square = n;
+  boardEl.innerHTML="";
+  for(let gridRow=1;gridRow<=10;gridRow++){
+    for(let gridCol=1;gridCol<=10;gridCol++){
+      const rowFromBottom=10-gridRow;let colIdx=gridCol-1;
+      if(rowFromBottom%2===1)colIdx=9-colIdx;
+      const n=rowFromBottom*10+colIdx+1;
+      const div=document.createElement('div');
+      div.className='cell'+(n===100?' finish':'')+((gridRow+gridCol)%2===0?' alt':'');
+      div.style.gridRow=gridRow;div.style.gridColumn=gridCol;
+      div.textContent=n;div.dataset.square=n;
       boardEl.appendChild(div);
     }
   }
@@ -647,750 +252,291 @@ function buildBoard(){
 }
 
 function drawOverlay(){
-  let svg = `<defs>
-    <marker id="arrowLadder" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle cx="3" cy="3" r="3" fill="var(--ladder)"/></marker>
-  </defs>`;
-  const ladders = activeLadders(), snakes = activeSnakes();
-  const shadow = state.mode==='shadow';
-
-  Object.entries(ladders).forEach(([from,to])=>{
-    if(shadow && !state.revealed[from]) return;
-    const a = squareCenterPct(+from), b = squareCenterPct(+to);
-    svg += ladderRungs(a,b);
-  });
-  Object.entries(snakes).forEach(([from,to])=>{
-    if(shadow && !state.revealed[from]) return;
-    const a = squareCenterPct(+from), b = squareCenterPct(+to);
-    svg += snakeCurve(a,b);
-  });
-  overlayEl.innerHTML = svg;
-
+  let svg='<defs><marker id="arrowLadder" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><circle cx="3" cy="3" r="3" fill="var(--ladder)"/></marker></defs>';
+  const ladders=activeLadders(),snakes=activeSnakes();
+  const shadow=state.mode==='shadow';
+  Object.entries(ladders).forEach(([from,to])=>{if(shadow&&!state.revealed[from])return;const a=squareCenterPct(+from),b=squareCenterPct(+to);svg+=ladderRungs(a,b);});
+  Object.entries(snakes).forEach(([from,to])=>{if(shadow&&!state.revealed[from])return;const a=squareCenterPct(+from),b=squareCenterPct(+to);svg+=snakeCurve(a,b);});
+  overlayEl.innerHTML=svg;
   document.querySelectorAll('.badge').forEach(b=>b.remove());
-  document.querySelectorAll('.cell').forEach(c=>{ c.style.background=''; });
-  Object.entries(ladders).forEach(([from,to])=>{
-    if(shadow && !state.revealed[from]) return;
-    tagCell(from,'ladder','‚ñ≤');
-  });
-  Object.entries(snakes).forEach(([from,to])=>{
-    if(shadow && !state.revealed[from]) return;
-    tagCell(from,'snake','‚ñº');
-  });
+  document.querySelectorAll('.cell').forEach(c=>{c.style.background='';c.classList.remove('frozen');});
+  Object.entries(ladders).forEach(([from,to])=>{if(shadow&&!state.revealed[from])return;tagCell(from,'ladder','?');});
+  Object.entries(snakes).forEach(([from,to])=>{if(shadow&&!state.revealed[from])return;tagCell(from,'snake','?');});
+  if(state.mode==='gravity'&&state.gravity.quicksand.length){state.gravity.quicksand.forEach(sq=>{const cell=boardEl.querySelector(`.cell[data-square="${sq}"]`);if(cell)cell.style.background='rgba(226,166,59,0.22)';});}
+  if(state.mode==='gravity'&&state.gravity.bounty){const cell=boardEl.querySelector(`.cell[data-square="${state.gravity.bounty}"]`);if(cell){const b=document.createElement('span');b.className='badge ladder';b.textContent='?';b.style.right='3px';b.style.bottom='3px';b.style.left='auto';cell.appendChild(b);}}
+  // Mark frozen squares
+  if(state.mode==='gravity'){Object.keys(state.gravity.frozen).forEach(teamId=>{const t=state.teams.find(t=>t.id===teamId);if(t&&t.pos){const cell=boardEl.querySelector(`.cell[data-square="${t.pos}"]`);if(cell)cell.classList.add('frozen');}});}
+}
+function tagCell(sq,type,icon){const cell=boardEl.querySelector(`.cell[data-square="${sq}"]`);if(!cell)return;const b=document.createElement('span');b.className='badge '+type;b.textContent=icon;b.style.left='3px';b.style.bottom='3px';cell.appendChild(b);}
+function ladderRungs(a,b){const x1=a.x*10,y1=a.y*10,x2=b.x*10,y2=b.y*10;const dx=x2-x1,dy=y2-y1;const len=Math.hypot(dx,dy);const nx=-dy/len,ny=dx/len;const off=10;const rail1=[x1+nx*off,y1+ny*off,x2+nx*off,y2+ny*off];const rail2=[x1-nx*off,y1-ny*off,x2-nx*off,y2-ny*off];let rungs="";const steps=Math.max(3,Math.floor(len/28));for(let i=0;i<=steps;i++){const t=i/steps;const rx1=rail1[0]+(rail1[2]-rail1[0])*t,ry1=rail1[1]+(rail1[3]-rail1[1])*t;const rx2=rail2[0]+(rail2[2]-rail2[0])*t,ry2=rail2[1]+(rail2[3]-rail2[1])*t;rungs+=`<line x1="${rx1}" y1="${ry1}" x2="${rx2}" y2="${ry2}" stroke="var(--ladder)" stroke-width="2.4" opacity="0.85"/>`;}return `<line x1="${rail1[0]}" y1="${rail1[1]}" x2="${rail1[2]}" y2="${rail1[3]}" stroke="var(--ladder)" stroke-width="3.4" opacity="0.9"/><line x1="${rail2[0]}" y1="${rail2[1]}" x2="${rail2[2]}" y2="${rail2[3]}" stroke="var(--ladder)" stroke-width="3.4" opacity="0.9"/>${rungs}<circle cx="${x1}" cy="${y1}" r="6" fill="var(--ladder)"/><circle cx="${x2}" cy="${y2}" r="6" fill="var(--ladder)"/>`;}
+function snakeCurve(a,b){const x1=a.x*10,y1=a.y*10,x2=b.x*10,y2=b.y*10;const mx=(x1+x2)/2,my=(y1+y2)/2;const dx=x2-x1,dy=y2-y1;const len=Math.hypot(dx,dy);const nx=-dy/len,ny=dx/len;const bow=Math.min(70,len*0.35);const c1x=mx+nx*bow,c1y=my+ny*bow;return `<path d="M ${x1} ${y1} Q ${c1x} ${c1y} ${x2} ${y2}" stroke="var(--snake)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.88"/><circle cx="${x1}" cy="${y1}" r="9" fill="var(--snake)"/><circle cx="${x2}" cy="${y2}" r="5.5" fill="var(--snake)" opacity="0.8"/>`;}
 
-  // quicksand markers (gravity mode)
-  if(state.mode==='gravity' && state.gravity.quicksand.length){
-    state.gravity.quicksand.forEach(sq=>{
-      const cell = boardEl.querySelector(`.cell[data-square="${sq}"]`);
-      if(cell) cell.style.background = 'rgba(226,166,59,0.22)';
-    });
-  }
-  // bounty marker
-  if(state.mode==='gravity' && state.gravity.bounty){
-    const cell = boardEl.querySelector(`.cell[data-square="${state.gravity.bounty}"]`);
-    if(cell){
-      const b = document.createElement('span');
-      b.className='badge ladder'; b.textContent='‚òÖ'; b.style.right='3px'; b.style.bottom='3px'; b.style.left='auto';
-      cell.appendChild(b);
-    }
-  }
-}
-function tagCell(sq,type,icon){
-  const cell = boardEl.querySelector(`.cell[data-square="${sq}"]`);
-  if(!cell) return;
-  const b = document.createElement('span');
-  b.className = 'badge '+type;
-  b.textContent = icon;
-  b.style.left = '3px'; b.style.bottom='3px';
-  cell.appendChild(b);
-}
-function ladderRungs(a,b){
-  const x1=a.x*10,y1=a.y*10,x2=b.x*10,y2=b.y*10;
-  const dx=x2-x1, dy=y2-y1;
-  const len=Math.hypot(dx,dy);
-  const nx=-dy/len, ny=dx/len; // normal
-  const off=10;
-  const rail1 = [x1+nx*off,y1+ny*off,x2+nx*off,y2+ny*off];
-  const rail2 = [x1-nx*off,y1-ny*off,x2-nx*off,y2-ny*off];
-  let rungs = "";
-  const steps = Math.max(3, Math.floor(len/28));
-  for(let i=0;i<=steps;i++){
-    const t=i/steps;
-    const rx1 = rail1[0]+(rail1[2]-rail1[0])*t, ry1 = rail1[1]+(rail1[3]-rail1[1])*t;
-    const rx2 = rail2[0]+(rail2[2]-rail2[0])*t, ry2 = rail2[1]+(rail2[3]-rail2[1])*t;
-    rungs += `<line x1="${rx1}" y1="${ry1}" x2="${rx2}" y2="${ry2}" stroke="var(--ladder)" stroke-width="2.4" opacity="0.85"/>`;
-  }
-  return `<line x1="${rail1[0]}" y1="${rail1[1]}" x2="${rail1[2]}" y2="${rail1[3]}" stroke="var(--ladder)" stroke-width="3.4" opacity="0.9"/>
-          <line x1="${rail2[0]}" y1="${rail2[1]}" x2="${rail2[2]}" y2="${rail2[3]}" stroke="var(--ladder)" stroke-width="3.4" opacity="0.9"/>
-          ${rungs}
-          <circle cx="${x1}" cy="${y1}" r="6" fill="var(--ladder)"/>
-          <circle cx="${x2}" cy="${y2}" r="6" fill="var(--ladder)"/>`;
-}
-function snakeCurve(a,b){
-  const x1=a.x*10,y1=a.y*10,x2=b.x*10,y2=b.y*10;
-  const mx=(x1+x2)/2, my=(y1+y2)/2;
-  const dx=x2-x1, dy=y2-y1;
-  const len=Math.hypot(dx,dy);
-  const nx=-dy/len, ny=dx/len;
-  const bow = Math.min(70, len*0.35);
-  const c1x = mx+nx*bow, c1y = my+ny*bow;
-  return `<path d="M ${x1} ${y1} Q ${c1x} ${c1y} ${x2} ${y2}" stroke="var(--snake)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.88"/>
-          <circle cx="${x1}" cy="${y1}" r="9" fill="var(--snake)"/>
-          <circle cx="${x2}" cy="${y2}" r="5.5" fill="var(--snake)" opacity="0.8"/>`;
-}
-
-/* ============================= PAWNS ============================= */
 function renderPawns(){
   document.querySelectorAll('.pawn').forEach(p=>p.remove());
-  const holder = document.getElementById('boardHolder');
-  const activeTeams = state.teams.filter(t=>t.active);
-  const bySquare = {};
-  activeTeams.forEach(t=>{ (bySquare[t.pos] = bySquare[t.pos]||[]).push(t); });
-  Object.entries(bySquare).forEach(([sq, teams])=>{
+  const holder=document.getElementById('boardHolder');
+  const activeTeams=state.teams.filter(t=>t.active);
+  const bySquare={};
+  activeTeams.forEach(t=>{(bySquare[t.pos]=bySquare[t.pos]||[]).push(t);});
+  Object.entries(bySquare).forEach(([sq,teams])=>{
     teams.forEach((t,i)=>{
-      const {x,y} = squareCenterPct(Math.max(1, t.pos));
-      const spread = teams.length>1 ? (i-(teams.length-1)/2)*3.2 : 0;
-      const pawn = document.createElement('div');
+      const{x,y}=squareCenterPct(Math.max(1,t.pos));
+      const spread=teams.length>1?(i-(teams.length-1)/2)*3.2:0;
+      const pawn=document.createElement('div');
       pawn.className='pawn';
-      pawn.style.background = t.color;
-      pawn.style.left = `calc(${x+spread}% - 2.8%)`;
-      pawn.style.top = `calc(${y}% - 2.8%)`;
-      pawn.title = t.name;
+      pawn.style.background=t.color;
+      pawn.style.left=`calc(${x+spread}% - 2.8%)`;
+      pawn.style.top=`calc(${y}% - 2.8%)`;
+      pawn.title=t.name;
       holder.appendChild(pawn);
     });
   });
 }
 
-/* ============================= TEAMS UI ============================= */
-const teamListEl = document.getElementById('teamList');
+const teamListEl=document.getElementById('teamList');
 function renderTeams(){
-  teamListEl.innerHTML = "";
-  if(state.teams.length===0){
-    teamListEl.innerHTML = `<div class="empty-note">No teams yet. Add at least two to start the match.</div>`;
-  }
+  teamListEl.innerHTML="";
+  if(state.teams.length===0){teamListEl.innerHTML=`<div class="empty-note">No teams yet. Add at least two to start the match.</div>`;}
   state.teams.forEach(t=>{
-    const row = document.createElement('div');
-    row.className='team-row';
-    row.innerHTML = `
-      <span class="swatch" style="background:${t.color}"></span>
-      <input type="text" value="${escapeHtml(t.name)}" data-id="${t.id}" ${state.started?'disabled':''}>
-      <span class="pos">sq ${t.pos}</span>
-      ${state.started?'':`<button class="rm" data-id="${t.id}" title="Remove team">‚úï</button>`}
-    `;
+    const row=document.createElement('div');row.className='team-row';
+    const isFrozen=state.mode==='gravity'&&state.gravity.frozen[t.id];
+    row.innerHTML=`<span class="swatch" style="background:${t.color}"></span><input type="text" value="${escapeHtml(t.name)}" data-id="${t.id}" ${state.started?'disabled':''}><span class="pos">sq ${t.pos}</span>${isFrozen?'<span class="frozen-badge" title="Frozen in quicksand">??</span>':''}${state.started?'':`<button class="rm" data-id="${t.id}" title="Remove team">?</button>`}`;
     teamListEl.appendChild(row);
   });
-  teamListEl.querySelectorAll('input[type=text]').forEach(inp=>{
-    inp.addEventListener('change', e=>{
-      const id = e.target.dataset.id;
-      const team = state.teams.find(t=>t.id===id);
-      if(team){ team.name = e.target.value.trim() || team.name; saveState(); renderTurnBanner(); renderLog(); }
-    });
-  });
-  teamListEl.querySelectorAll('.rm').forEach(btn=>{
-    btn.addEventListener('click', e=>{
-      const id = e.target.dataset.id;
-      state.teams = state.teams.filter(t=>t.id!==id);
-      saveState(); renderTeams(); renderPawns();
-    });
-  });
+  teamListEl.querySelectorAll('input[type=text]').forEach(inp=>{inp.addEventListener('change',e=>{const id=e.target.dataset.id;const team=state.teams.find(t=>t.id===id);if(team){team.name=e.target.value.trim()||team.name;saveState();renderTurnBanner();}});});
+  teamListEl.querySelectorAll('.rm').forEach(btn=>{btn.addEventListener('click',e=>{const id=e.target.dataset.id;state.teams=state.teams.filter(t=>t.id!==id);saveState();renderTeams();renderPawns();});});
 }
-function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
-document.getElementById('btnAddTeam').addEventListener('click', ()=>{
-  const input = document.getElementById('newTeamName');
-  const name = input.value.trim();
-  if(!name) return toast("Enter a team name first.");
-  if(state.started) return toast("Match already in progress ‚Äî reset to add teams.");
-  const color = TEAM_COLORS[state.teams.length % TEAM_COLORS.length];
-  state.teams.push({
-    id: crypto.randomUUID(), name, color, pos:1, active:true,
-    inventory:{shield:1, sabotage:1, swapper:1, loadedDie:1},
-    shieldArmed:false
-  });
-  input.value="";
-  saveState(); renderTeams(); renderPawns(); renderTurnBanner();
+document.getElementById('btnAddTeam').addEventListener('click',()=>{
+  const input=document.getElementById('newTeamName');const name=input.value.trim();
+  if(!name)return toast("Enter a team name first.");
+  if(state.started)return toast("Match already in progress ó reset to add teams.");
+  const color=TEAM_COLORS[state.teams.length%TEAM_COLORS.length];
+  state.teams.push({id:crypto.randomUUID(),name,color,pos:1,active:true,inventory:{shield:1,sabotage:1,swapper:1,loadedDie:1},shieldArmed:false});
+  input.value="";saveState();renderTeams();renderPawns();renderTurnBanner();
 });
 
-document.getElementById('btnStartMatch').addEventListener('click', ()=>{
-  if(state.teams.length<2) return toast("Add at least two teams to start.");
-  state.started = true;
-  state.finished = false;
-  state.turnIndex = 0;
-  state.teams.forEach(t=>{
-    t.pos=1; t.active=true;
-    t.inventory = {shield:1, sabotage:1, swapper:1, loadedDie:1};
-    t.shieldArmed = false;
-  });
-  state.history = [];
-  state.revealed = {};
-  state.brokenLadders = {};
-  state.gravity = {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
-  undoStack = [];
-  saveState();
-  buildBoard();
-  renderAll();
-  toast(`Match started in ${MODES.find(m=>m.id===state.mode).name} mode. Good luck!`);
+document.getElementById('btnStartMatch').addEventListener('click',()=>{
+  if(state.teams.length<2)return toast("Add at least two teams to start.");
+  state.started=true;state.finished=false;state.turnIndex=0;
+  state.teams.forEach(t=>{t.pos=1;t.active=true;t.inventory={shield:1,sabotage:1,swapper:1,loadedDie:1};t.shieldArmed=false;});
+  state.history=[];state.log=[];state.revealed={};state.brokenLadders={};
+  state.gravity={turnsSinceShift:0,invert:false,invertTurnsLeft:0,quicksand:[],quicksandTurnsLeft:0,bounty:null,frozen:{}};
+  undoStack=[];armedLoadedDie=null;
+  saveState();buildBoard();renderAll();
+  playSound('start');toast(`Match started in ${MODES.find(m=>m.id===state.mode).name} mode. Good luck!`);
 });
 
-/* ============================= GAME MODE ============================= */
-const modeListEl = document.getElementById('modeList');
+const modeListEl=document.getElementById('modeList');
 function renderModeSelector(){
-  modeListEl.innerHTML = MODES.map(m=>`
-    <label class="mode-opt ${state.mode===m.id?'active':''} ${state.started?'disabledOpt':''}">
-      <input type="radio" name="mode" value="${m.id}" ${state.mode===m.id?'checked':''} ${state.started?'disabled':''}>
-      <span>${m.name}</span>
-    </label>
-  `).join('');
-  document.getElementById('modeDesc').textContent = MODES.find(m=>m.id===state.mode).desc;
-  modeListEl.querySelectorAll('input[name=mode]').forEach(r=>{
-    r.addEventListener('change', e=>{
-      if(state.started) return;
-      state.mode = e.target.value;
-      saveState();
-      renderModeSelector();
-      renderModePanels();
-      buildBoard();
-    });
-  });
-  document.getElementById('shadowPanel').style.display = state.mode==='shadow' ? '' : 'none';
-  document.getElementById('draftPanel').style.display = state.mode==='draft' ? '' : 'none';
-  document.getElementById('gravityPanel').style.display = state.mode==='gravity' ? '' : 'none';
+  modeListEl.innerHTML=MODES.map(m=>`<label class="mode-opt ${state.mode===m.id?'active':''} ${state.started?'disabledOpt':''}"><input type="radio" name="mode" value="${m.id}" ${state.mode===m.id?'checked':''} ${state.started?'disabled':''}><span>${m.name}<br><small>${m.desc}</small></span></label>`).join('');
+  document.getElementById('modeDesc').textContent=MODES.find(m=>m.id===state.mode).desc;
+  modeListEl.querySelectorAll('input[name=mode]').forEach(r=>{r.addEventListener('change',e=>{if(state.started)return;state.mode=e.target.value;saveState();renderModeSelector();renderModePanels();buildBoard();});});
+  document.getElementById('shadowPanel').style.display=state.mode==='shadow'?'':'none';
+  document.getElementById('draftPanel').style.display=state.mode==='draft'?'':'none';
+  document.getElementById('gravityPanel').style.display=state.mode==='gravity'?'':'none';
 }
 function renderModePanels(){
-  document.getElementById('shadowPanel').style.display = state.mode==='shadow' ? '' : 'none';
-  document.getElementById('draftPanel').style.display = state.mode==='draft' ? '' : 'none';
-  document.getElementById('gravityPanel').style.display = state.mode==='gravity' ? '' : 'none';
-  if(state.mode==='shadow') renderMasterKey();
-  if(state.mode==='draft') renderDraftPanel();
-  if(state.mode==='gravity') renderGravityPanel();
+  document.getElementById('shadowPanel').style.display=state.mode==='shadow'?'':'none';
+  document.getElementById('draftPanel').style.display=state.mode==='draft'?'':'none';
+  document.getElementById('gravityPanel').style.display=state.mode==='gravity'?'':'none';
+  if(state.mode==='shadow')renderMasterKey();
+  if(state.mode==='draft')renderDraftPanel();
+  if(state.mode==='gravity')renderGravityPanel();
 }
 
-/* --- Shadow Grid --- */
-document.getElementById('btnToggleKey').addEventListener('click', ()=>{
-  document.getElementById('masterKey').classList.toggle('hidden');
-});
-function renderMasterKey(){
-  const el = document.getElementById('masterKey');
-  const ladders = Object.entries(activeLadders()).map(([f,t])=>`<div class="k-ladder">‚ñ≤ ${f} ‚Üí ${t}</div>`).join('');
-  const snakes = Object.entries(activeSnakes()).map(([f,t])=>`<div class="k-snake">‚ñº ${f} ‚Üí ${t}</div>`).join('');
-  el.innerHTML = ladders + snakes;
-}
+document.getElementById('btnToggleKey').addEventListener('click',()=>{document.getElementById('masterKey').classList.toggle('hidden');});
+function renderMasterKey(){const el=document.getElementById('masterKey');const ladders=Object.entries(activeLadders()).map(([f,t])=>`<div class="k-ladder">? ${f} ? ${t}</div>`).join('');const snakes=Object.entries(activeSnakes()).map(([f,t])=>`<div class="k-snake">? ${f} ? ${t}</div>`).join('');el.innerHTML=ladders+snakes;}
 
-/* --- Draft & Trade --- */
 function renderDraftPanel(){
-  const team = currentTeam();
-  document.getElementById('draftTeamName').textContent = team ? team.name : '‚Äî';
-  const itemsEl = document.getElementById('draftItems');
-  if(!team){ itemsEl.innerHTML = `<div class="empty-note">Start the match to see inventory.</div>`; return; }
-  const inv = team.inventory;
-  itemsEl.innerHTML = `
-    <div class="item-row"><span>üõ°Ô∏è Deflector Shield ${team.shieldArmed?'<b style="color:var(--amber)">(armed)</b>':''}</span>
-      <span class="qty">${inv.shield}</span></div>
-    <div class="item-row"><span>ü™ú Ladder Sabotage</span>
-      <span class="qty">${inv.sabotage}</span></div>
-    <div class="item-row"><span>üîÄ Swapper</span>
-      <span class="qty">${inv.swapper}</span></div>
-    <div class="item-row" style="flex-wrap:wrap;gap:8px;">
-      <button class="btn small" id="btnUseShield" ${inv.shield<1||team.shieldArmed?'disabled':''}>Arm shield</button>
-      <button class="btn small" id="btnUseSabotage" ${inv.sabotage<1?'disabled':''}>Sabotage a ladder</button>
-      <button class="btn small" id="btnUseSwapper" ${inv.swapper<1?'disabled':''}>Swap with team</button>
-    </div>
-  `;
-  const b1 = document.getElementById('btnUseShield');
-  if(b1) b1.addEventListener('click', ()=>{
-    team.inventory.shield -= 1; team.shieldArmed = true;
-    logEntry(`<b>${team.name}</b> armed a Deflector Shield.`, 'move');
-    saveState(); renderDraftPanel(); renderTeams();
+  const team=currentTeam();
+  document.getElementById('draftTeamName').textContent=team?team.name:'ó';
+  const itemsEl=document.getElementById('draftItems');
+  if(!team){itemsEl.innerHTML=`<div class="empty-note">Start the match to see inventory.</div>`;return;}
+  const inv=team.inventory;
+  itemsEl.innerHTML=`<div class="item-row"><span>??? Deflector Shield ${team.shieldArmed?'<b style="color:var(--amber)">(armed)</b>':''}</span><span class="qty">${inv.shield}</span></div><div class="item-row"><span>?? Ladder Sabotage</span><span class="qty">${inv.sabotage}</span></div><div class="item-row"><span>?? Swapper</span><span class="qty">${inv.swapper}</span></div><div class="item-row" style="flex-wrap:wrap;gap:8px;"><button class="btn small" id="btnUseShield" ${inv.shield<1||team.shieldArmed?'disabled':''}>Arm shield</button><button class="btn small" id="btnUseSabotage" ${inv.sabotage<1?'disabled':''}>Sabotage a ladder</button><button class="btn small" id="btnUseSwapper" ${inv.swapper<1?'disabled':''}>Swap with team</button></div>`;
+  const b1=document.getElementById('btnUseShield');if(b1)b1.addEventListener('click',()=>{team.inventory.shield-=1;team.shieldArmed=true;logEntry(`<b>${team.name}</b> armed a Deflector Shield.`,'move');saveState();renderDraftPanel();renderTeams();});
+  const b2=document.getElementById('btnUseSabotage');if(b2)b2.addEventListener('click',()=>{
+    const ladders=Object.keys(activeLadders()).filter(sq=>!state.brokenLadders[sq]);
+    if(ladders.length===0)return toast("No un-sabotaged ladders left.");
+    showPrompt("Sabotage a ladder","Choose which ladder to sabotage:",ladders.map(sq=>({label:`Square ${sq} ? ${activeLadders()[sq]}`,detail:`Next team to land here won't climb`,value:sq})),choice=>{if(!choice)return;team.inventory.sabotage-=1;state.brokenLadders[choice]=true;logEntry(`<b>${team.name}</b> sabotaged the ladder at ${choice} ó next team to land there won't climb.`,'ladder');saveState();renderDraftPanel();renderTeams();});
   });
-  const b2 = document.getElementById('btnUseSabotage');
-  if(b2) b2.addEventListener('click', ()=>{
-    const ladders = Object.keys(activeLadders()).filter(sq=>!state.brokenLadders[sq]);
-    if(ladders.length===0) return toast("No un-sabotaged ladders left.");
-    const choice = prompt(`Sabotage which ladder square? Options: ${ladders.join(', ')}`, ladders[0]);
-    if(!choice || !ladders.includes(choice)) return;
-    team.inventory.sabotage -= 1;
-    state.brokenLadders[choice] = true;
-    logEntry(`<b>${team.name}</b> sabotaged the ladder at ${choice} ‚Äî next team to land there won't climb.`, 'ladder');
-    saveState(); renderDraftPanel(); renderTeams();
-  });
-  const b3 = document.getElementById('btnUseSwapper');
-  if(b3) b3.addEventListener('click', ()=>{
-    const targets = state.teams.filter(t=>t.active && t.id!==team.id && Math.abs(t.pos-team.pos)<=5);
-    if(targets.length===0) return toast("No team within 5 squares to swap with.");
-    const names = targets.map(t=>`${t.name} (sq ${t.pos})`).join(' | ');
-    const choice = prompt(`Swap with which team? ${names}`, targets[0].name);
-    const target = targets.find(t=>t.name===choice);
-    if(!target) return;
-    const p1 = team.pos, p2 = target.pos;
-    team.pos = p2; target.pos = p1;
-    team.inventory.swapper -= 1;
-    logEntry(`<b>${team.name}</b> swapped positions with <b>${target.name}</b> (${p1} ‚áÑ ${p2}).`, 'move');
-    saveState(); renderDraftPanel(); renderTeams(); renderPawns();
+  const b3=document.getElementById('btnUseSwapper');if(b3)b3.addEventListener('click',()=>{
+    const targets=state.teams.filter(t=>t.active&&t.id!==team.id&&Math.abs(t.pos-team.pos)<=5);
+    if(targets.length===0)return toast("No team within 5 squares to swap with.");
+    showPrompt("Swap positions","Choose a team to swap with:",targets.map(t=>({label:t.name,detail:`Currently on square ${t.pos}`,value:t.id})),choice=>{if(!choice)return;const target=state.teams.find(t=>t.id===choice);if(!target)return;const p1=team.pos,p2=target.pos;team.pos=p2;target.pos=p1;team.inventory.swapper-=1;logEntry(`<b>${team.name}</b> swapped positions with <b>${target.name}</b> (${p1} ? ${p2}).`,'move');saveState();renderDraftPanel();renderTeams();renderPawns();});
   });
 }
-document.getElementById('btnLoadedLow').addEventListener('click', ()=>armLoadedDie('low'));
-document.getElementById('btnLoadedHigh').addEventListener('click', ()=>armLoadedDie('high'));
-function armLoadedDie(range){
-  const team = currentTeam();
-  if(!team) return;
-  if(team.inventory.loadedDie < 1) return toast("No Loaded Die charges left.");
-  armedLoadedDie = range;
-  document.getElementById('loadedStatus').textContent = `Loaded die armed: ${range==='low'?'1‚Äì3':'4‚Äì6'} for ${team.name}'s next roll.`;
-  toast(`Loaded die armed (${range==='low'?'1‚Äì3':'4‚Äì6'}) for ${team.name}.`);
-}
 
-/* --- Audience-Driven Gravity --- */
-document.getElementById('btnInvert').addEventListener('click', ()=>applyShift('invert'));
-document.getElementById('btnQuicksand').addEventListener('click', ()=>applyShift('quicksand'));
-document.getElementById('btnBounty').addEventListener('click', ()=>applyShift('bounty'));
-function applyShift(type){
-  const g = state.gravity;
-  if(type==='invert'){
-    g.invert = true; g.invertTurnsLeft = 3;
-    logEntry(`üîÑ Audience vote: <b>Invert Gravity</b> ‚Äî all snakes and ladders swap for the next 3 turns!`, 'win');
-  } else if(type==='quicksand'){
-    const all = Array.from({length:98}, (_,i)=>i+2);
-    const picks = [];
-    while(picks.length<3 && all.length){
-      const idx = Math.floor(Math.random()*all.length);
-      picks.push(all.splice(idx,1)[0]);
-    }
-    g.quicksand = picks; g.quicksandTurnsLeft = 3;
-    logEntry(`üåÄ Audience vote: <b>Quicksand</b> ‚Äî squares ${picks.join(', ')} freeze whoever lands there for one turn!`, 'win');
-  } else if(type==='bounty'){
-    g.bounty = 50;
-    logEntry(`‚≠ê Audience vote: <b>Bounty</b> ‚Äî first team to land exactly on square 50 gets a double move!`, 'win');
-  }
-  g.turnsSinceShift = 0;
-  saveState();
-  buildBoard();
-  renderAll();
-}
-function renderGravityPanel(){
-  const g = state.gravity;
-  const remaining = Math.max(0, 3 - g.turnsSinceShift);
-  const ready = state.started && !state.finished && remaining===0;
-  document.getElementById('shiftStatus').textContent = ready
-    ? "Board Shift ready ‚Äî read out the crowd's poll result and pick the outcome."
-    : `Board Shift available in ${remaining} turn${remaining===1?'':'s'}.`;
-  document.getElementById('btnInvert').disabled = !ready;
-  document.getElementById('btnQuicksand').disabled = !ready;
-  document.getElementById('btnBounty').disabled = !ready;
-  const mods = [];
-  if(g.invert) mods.push(`Gravity inverted (${g.invertTurnsLeft} turn${g.invertTurnsLeft===1?'':'s'} left)`);
-  if(g.quicksand.length) mods.push(`Quicksand on ${g.quicksand.join(', ')} (${g.quicksandTurnsLeft} turn${g.quicksandTurnsLeft===1?'':'s'} left)`);
-  if(g.bounty) mods.push(`Bounty active on square ${g.bounty}`);
-  document.getElementById('activeModifiers').textContent = mods.length ? mods.join(' ¬∑ ') : 'No active modifiers.';
-}
+document.getElementById('btnLoadedLow').addEventListener('click',()=>armLoadedDie('low'));
+document.getElementById('btnLoadedHigh').addEventListener('click',()=>armLoadedDie('high'));
+function armLoadedDie(range){const team=currentTeam();if(!team)return;if(team.inventory.loadedDie<1)return toast("No Loaded Die charges left.");armedLoadedDie=range;document.getElementById('loadedStatus').textContent=`Loaded die armed: ${range==='low'?'1ñ3':'4ñ6'} for ${team.name}'s next roll.`;toast(`Loaded die armed (${range==='low'?'1ñ3':'4ñ6'}) for ${team.name}.`);}
 
-/* ============================= TURN BANNER ============================= */
-function currentTeam(){
-  const active = state.teams.filter(t=>t.active);
-  if(active.length===0) return null;
-  return active[state.turnIndex % active.length];
-}
-function renderTurnBanner(){
-  const swatch = document.getElementById('turnSwatch');
-  const nameEl = document.getElementById('turnName');
-  if(!state.started || state.finished){
-    swatch.style.background="#555";
-    nameEl.textContent = state.finished ? "Match finished" : "Not started";
-    return;
-  }
-  const t = currentTeam();
-  if(!t){ swatch.style.background="#555"; nameEl.textContent="‚Äî"; return; }
-  swatch.style.background = t.color;
-  nameEl.textContent = t.name;
-}
+document.getElementById('btnInvert').addEventListener('click',()=>applyShift('invert'));
+document.getElementById('btnQuicksand').addEventListener('click',()=>applyShift('quicksand'));
+document.getElementById('btnBounty').addEventListener('click',()=>applyShift('bounty'));
+function applyShift(type){const g=state.gravity;if(type==='invert'){g.invert=true;g.invertTurnsLeft=3;logEntry(`?? Audience vote: <b>Invert Gravity</b> ó all snakes and ladders swap for the next 3 turns!`,'win');}else if(type==='quicksand'){const all=Array.from({length:(98)},(_,i)=>i+2);const picks=[];while(picks.length<3&&all.length){const idx=Math.floor(Math.random()*all.length);picks.push(all.splice(idx,1)[0]);}g.quicksand=picks;g.quicksandTurnsLeft=3;logEntry(`?? Audience vote: <b>Quicksand</b> ó squares ${picks.join(', ')} freeze whoever lands there for one turn!`,'win');}else if(type==='bounty'){g.bounty=50;logEntry(`? Audience vote: <b>Bounty</b> ó first team to land exactly on square 50 gets a double move!`,'win');}g.turnsSinceShift=0;saveState();buildBoard();renderAll();}
+function renderGravityPanel(){const g=state.gravity;const remaining=Math.max(0,3-g.turnsSinceShift);const ready=state.started&&!state.finished&&remaining===0;document.getElementById('shiftStatus').textContent=ready?"Board Shift ready ó read out the crowd's poll result and pick the outcome.":`Board Shift available in ${remaining} turn${remaining===1?'':'s'}.`;document.getElementById('btnInvert').disabled=!ready;document.getElementById('btnQuicksand').disabled=!ready;document.getElementById('btnBounty').disabled=!ready;const mods=[];if(g.invert)mods.push(`Gravity inverted (${g.invertTurnsLeft} turn${g.invertTurnsLeft===1?'':'s'} left)`);if(g.quicksand.length)mods.push(`Quicksand on ${g.quicksand.join(', ')} (${g.quicksandTurnsLeft} turn${g.quicksandTurnsLeft===1?'':'s'} left)`);if(g.bounty)mods.push(`Bounty active on square ${g.bounty}`);document.getElementById('activeModifiers').textContent=mods.length?mods.join(' ∑ '):'No active modifiers.';}
 
-/* ============================= DICE & MOVEMENT ============================= */
-const dieBig = document.getElementById('dieBig');
-const btnRoll = document.getElementById('btnRoll');
-let isRolling = false;
+function currentTeam(){const active=state.teams.filter(t=>t.active);if(active.length===0)return null;return active[state.turnIndex%active.length];}
+function renderTurnBanner(){const swatch=document.getElementById('turnSwatch');const nameEl=document.getElementById('turnName');if(!state.started||state.finished){swatch.style.background="#555";nameEl.textContent=state.finished?"Match finished":"Not started";return;}const t=currentTeam();if(!t){swatch.style.background="#555";nameEl.textContent="ó";return;}swatch.style.background=t.color;nameEl.textContent=t.name;}
 
-btnRoll.addEventListener('click', ()=>{
-  if(isRolling) return;
-  if(!state.started || state.finished) return toast("Start the match first.");
-  const team = currentTeam();
-  if(team && state.mode==='gravity' && state.gravity.frozen[team.id]){
-    // frozen teams auto-skip when rolled for; advanceTurn already handles skipping,
-    // but guard here in case renderAll hasn't caught up.
-  }
+const dieBig=document.getElementById('dieBig');const btnRoll=document.getElementById('btnRoll');let isRolling=false;
 
-  isRolling = true;
-  btnRoll.disabled = true;
-  dieBig.classList.add('rolling');
-
-  const range = (state.mode==='draft' && armedLoadedDie) ? armedLoadedDie : null;
-  const min = range==='low' ? 1 : (range==='high' ? 4 : 1);
-  const max = range==='low' ? 3 : (range==='high' ? 6 : 6);
-
-  let ticks = 0;
-  const spin = setInterval(()=>{
-    dieBig.textContent = min + Math.floor(Math.random()*(max-min+1));
-    ticks++;
-    if(ticks > 12){
-      clearInterval(spin);
-      const finalRoll = min + Math.floor(Math.random()*(max-min+1));
-      dieBig.textContent = finalRoll;
-      dieBig.classList.remove('rolling');
-      isRolling = false;
-      if(range && team){
-        team.inventory.loadedDie -= 1;
-        logEntry(`<b>${team.name}</b> used a Loaded Die (${range==='low'?'1‚Äì3':'4‚Äì6'}).`, 'move');
-        armedLoadedDie = null;
-        document.getElementById('loadedStatus').textContent = '';
-      }
-      processMove(finalRoll);
-    }
-  }, 60);
+btnRoll.addEventListener('click',()=>{
+  if(isRolling)return;
+  if(!state.started||state.finished)return toast("Start the match first.");
+  const team=currentTeam();
+  if(!team)return toast("No team available.");
+  if(state.mode==='gravity'&&state.gravity.frozen[team.id]){delete state.gravity.frozen[team.id];logEntry(`?? <b>${team.name}</b> is frozen and skips this turn.`,'move');advanceTurn();saveState();renderAll();return;}
+  isRolling=true;btnRoll.disabled=true;dieBig.classList.add('rolling');playSound('roll');
+  const range=(state.mode==='draft'&&armedLoadedDie)?armedLoadedDie:null;
+  const min=range==='low'?1:(range==='high'?4:1);const max=range==='low'?3:(range==='high'?6:6);
+  let ticks=0;
+  const spin=setInterval(()=>{dieBig.textContent=min+Math.floor(Math.random()*(max-min+1));ticks++;if(ticks>15){clearInterval(spin);const finalRoll=min+Math.floor(Math.random()*(max-min+1));dieBig.textContent=finalRoll;dieBig.classList.remove('rolling');dieBig.classList.add('bounce');setTimeout(()=>dieBig.classList.remove('bounce'),300);isRolling=false;if(range&&team){team.inventory.loadedDie-=1;logEntry(`<b>${team.name}</b> used a Loaded Die (${range==='low'?'1ñ3':'4ñ6'}).`,'move');armedLoadedDie=null;document.getElementById('loadedStatus').textContent='';playSound('powerup');}processMove(finalRoll);}},55);
 });
 
-document.getElementById('btnUndo').addEventListener('click', undoLast);
+document.getElementById('btnUndo').addEventListener('click',undoLast);
 
 function processMove(steps){
-  if(!state.started || state.finished){ btnRoll.disabled=false; return; }
-  const team = currentTeam();
-  if(!team){ btnRoll.disabled=false; return; }
-
-  const from = team.pos;
-  let to = from + steps;
-  let overflow = false;
-  if(to > 100){ to = from; overflow = true; } // must land exactly on 100
-
-  undoStack.push(JSON.parse(JSON.stringify({teams:state.teams, turnIndex:state.turnIndex, history:state.history, mode:state.mode, revealed:state.revealed, brokenLadders:state.brokenLadders, gravity:state.gravity})));
-
-  if(overflow){
-    const entry = {teamId:team.id, teamName:team.name, roll:steps, from, to:from, event:'bounce', time:Date.now()};
-    state.history.push(entry);
-    logEntry(`<b>${team.name}</b> rolled ${steps} ‚Äî exceeds 100, needs the exact number. Stays on ${from}.`, 'move');
-    advanceTurn();
-    saveState(); renderAll();
-    resetDice();
-    return;
-  }
-
-  team.pos = to;
-  const entry = {teamId:team.id, teamName:team.name, roll:steps, from, to, event:'move', time:Date.now()};
-  state.history.push(entry);
-  logEntry(`<b>${team.name}</b> rolled ${steps} ‚Äî moves ${from} ‚Üí ${to}.`, 'move');
-  saveState();
-  renderPawns(); renderTeams();
-  resetDice();
-
-  // ----- Audience-Driven Gravity: Bounty check -----
-  if(state.mode==='gravity' && state.gravity.bounty && to===state.gravity.bounty){
-    state.gravity.bounty = null;
-    const bonusTo = Math.min(100, to+steps);
-    logEntry(`‚≠ê <b>${team.name}</b> hit the Bounty square! Double move: ${to} ‚Üí ${bonusTo}.`, 'win');
-    team.pos = bonusTo;
-    saveState(); renderPawns(); renderTeams(); buildBoard();
-    if(bonusTo===100){ finishMatch(team); return; }
-  }
-  // ----- Audience-Driven Gravity: Quicksand check -----
-  if(state.mode==='gravity' && state.gravity.quicksand.includes(team.pos)){
-    state.gravity.frozen[team.id] = true;
-    logEntry(`üåÄ <b>${team.name}</b> landed in Quicksand at ${team.pos} ‚Äî frozen for their next turn.`, 'move');
-  }
-
-  if(team.pos===100){
-    finishMatch(team);
-    return;
-  }
-
-  const to2 = team.pos;
-  const ladders = activeLadders(), snakes = activeSnakes();
-
-  // ----- Shadow Grid: reveal on landing -----
-  if(state.mode==='shadow' && (ladders[to2] || snakes[to2])){
-    state.revealed[to2] = true;
-    saveState(); buildBoard();
-  }
-
-  // ----- Draft & Trade: sabotaged ladder -----
-  if(state.mode==='draft' && ladders[to2] && state.brokenLadders[to2]){
-    delete state.brokenLadders[to2];
-    logEntry(`ü™ú <b>${team.name}</b> landed on a sabotaged ladder at ${to2} ‚Äî it's broken, no climb.`, 'ladder');
-    saveState();
-    advanceTurn();
-    saveState(); renderAll();
-    return;
-  }
-
-  if(ladders[to2]){
-    openChallenge(team, 'ladder', to2, ladders[to2]);
-  } else if(snakes[to2]){
-    // ----- Draft & Trade: armed shield auto-blocks -----
-    if(state.mode==='draft' && team.shieldArmed){
-      team.shieldArmed = false;
-      logEntry(`üõ°Ô∏è <b>${team.name}</b>'s Deflector Shield blocked the snake at ${to2} ‚Äî no challenge needed.`, 'snake');
-      saveState();
-      advanceTurn();
-      saveState(); renderAll();
-      return;
-    }
-    openChallenge(team, 'snake', to2, snakes[to2]);
-  } else {
-    advanceTurn();
-    saveState(); renderAll();
-  }
+  if(!state.started||state.finished){btnRoll.disabled=false;return;}
+  const team=currentTeam();if(!team){btnRoll.disabled=false;return;}
+  const from=team.pos;let to=from+steps;let overflow=false;
+  if(to>100){to=from;overflow=true;}
+  undoStack.push(JSON.parse(JSON.stringify({teams:state.teams,turnIndex:state.turnIndex,history:state.history,log:state.log,mode:state.mode,revealed:state.revealed,brokenLadders:state.brokenLadders,gravity:state.gravity})));
+  if(overflow){const entry={teamId:team.id,teamName:team.name,roll:steps,from,to:from,event:'bounce',time:Date.now()};state.history.push(entry);logEntry(`<b>${team.name}</b> rolled ${steps} ó exceeds 100, needs the exact number. Stays on ${from}.`,'move');advanceTurn();saveState();renderAll();resetDice();return;}
+  team.pos=to;
+  const entry={teamId:team.id,teamName:team.name,roll:steps,from,to,event:'move',time:Date.now()};
+  state.history.push(entry);logEntry(`<b>${team.name}</b> rolled ${steps} ó moves ${from} ? ${to}.`,'move');saveState();renderPawns();renderTeams();resetDice();
+  if(state.mode==='gravity'&&state.gravity.bounty&&to===state.gravity.bounty){state.gravity.bounty=null;const bonusTo=Math.min(100,to+steps);logEntry(`? <b>${team.name}</b> hit the Bounty square! Double move: ${to} ? ${bonusTo}.`,'win');team.pos=bonusTo;saveState();renderPawns();renderTeams();buildBoard();if(bonusTo===100){finishMatch(team);return;}}
+  if(state.mode==='gravity'&&state.gravity.quicksand.includes(team.pos)){state.gravity.frozen[team.id]=true;logEntry(`?? <b>${team.name}</b> landed in Quicksand at ${team.pos} ó frozen for their next turn.`,'move');}
+  if(team.pos===100){finishMatch(team);return;}
+  const to2=team.pos;const ladders=activeLadders(),snakes=activeSnakes();
+  if(state.mode==='shadow'&&(ladders[to2]||snakes[to2])){state.revealed[to2]=true;saveState();buildBoard();}
+  if(state.mode==='draft'&&ladders[to2]&&state.brokenLadders[to2]){delete state.brokenLadders[to2];logEntry(`?? <b>${team.name}</b> landed on a sabotaged ladder at ${to2} ó it's broken, no climb.`,'ladder');saveState();advanceTurn();saveState();renderAll();return;}
+  if(ladders[to2]){openChallenge(team,'ladder',to2,ladders[to2]);}
+  else if(snakes[to2]){if(state.mode==='draft'&&team.shieldArmed){team.shieldArmed=false;logEntry(`??? <b>${team.name}</b>'s Deflector Shield blocked the snake at ${to2} ó no challenge needed.`,'snake');saveState();advanceTurn();saveState();renderAll();return;}openChallenge(team,'snake',to2,snakes[to2]);}
+  else{advanceTurn();saveState();renderAll();}
 }
 
-function resetDice(){
-  btnRoll.disabled = false;
-  document.getElementById('btnUndo').disabled = undoStack.length===0;
-}
+function resetDice(){btnRoll.disabled=false;document.getElementById('btnUndo').disabled=undoStack.length===0;}
 function advanceTurn(){
-  // Gravity mode: tick down modifier windows once per full turn
-  if(state.mode==='gravity'){
-    const g = state.gravity;
-    g.turnsSinceShift += 1;
-    if(g.invert){ g.invertTurnsLeft -= 1; if(g.invertTurnsLeft<=0){ g.invert=false; logEntry('üîÑ Gravity reverts to normal.', 'move'); } }
-    if(g.quicksand.length){ g.quicksandTurnsLeft -= 1; if(g.quicksandTurnsLeft<=0){ g.quicksand=[]; logEntry('üåÄ Quicksand dries up.', 'move'); } }
-  }
-  const activeCount = state.teams.filter(t=>t.active).length;
-  if(activeCount===0) return;
-  state.turnIndex = (state.turnIndex+1) % activeCount;
-
-  // Gravity mode: skip a frozen team's turn
-  if(state.mode==='gravity'){
-    let guard = 0;
-    while(guard < activeCount){
-      const t = currentTeam();
-      if(t && state.gravity.frozen[t.id]){
-        delete state.gravity.frozen[t.id];
-        logEntry(`üåÄ <b>${t.name}</b> is thawed but skips this turn.`, 'move');
-        state.turnIndex = (state.turnIndex+1) % activeCount;
-        guard++;
-      } else break;
-    }
-  }
+  if(state.mode==='gravity'){const g=state.gravity;g.turnsSinceShift+=1;if(g.invert){g.invertTurnsLeft-=1;if(g.invertTurnsLeft<=0){g.invert=false;logEntry('?? Gravity reverts to normal.','move');}}if(g.quicksand.length){g.quicksandTurnsLeft-=1;if(g.quicksandTurnsLeft<=0){g.quicksand=[];logEntry('?? Quicksand dries up.','move');}}}
+  const activeCount=state.teams.filter(t=>t.active).length;if(activeCount===0)return;
+  state.turnIndex=(state.turnIndex+1)%activeCount;
+  if(state.mode==='gravity'){let guard=0;while(guard<activeCount){const t=currentTeam();if(t&&state.gravity.frozen[t.id]){delete state.gravity.frozen[t.id];logEntry(`?? <b>${t.name}</b> is thawed but skips this turn.`,'move');state.turnIndex=(state.turnIndex+1)%activeCount;guard++;}else break;}}
 }
-function undoLast(){
-  const prev = undoStack.pop();
-  if(!prev) return;
-  state.teams = prev.teams; state.turnIndex = prev.turnIndex; state.history = prev.history;
-  if(prev.revealed) state.revealed = prev.revealed;
-  if(prev.brokenLadders) state.brokenLadders = prev.brokenLadders;
-  if(prev.gravity) state.gravity = prev.gravity;
-  saveState(); buildBoard(); renderAll();
-  document.getElementById('btnUndo').disabled = undoStack.length===0;
-  toast("Last move undone.");
+function undoLast(){const prev=undoStack.pop();if(!prev)return;state.teams=prev.teams;state.turnIndex=prev.turnIndex;state.history=prev.history;state.log=prev.log;if(prev.revealed)state.revealed=prev.revealed;if(prev.brokenLadders)state.brokenLadders=prev.brokenLadders;if(prev.gravity)state.gravity=prev.gravity;saveState();buildBoard();renderAll();document.getElementById('btnUndo').disabled=undoStack.length===0;toast("Last move undone.");}
+
+const modalBg=document.getElementById('challengeModalBg');const modalEl=document.getElementById('challengeModal');const chTitle=document.getElementById('chTitle');const chSub=document.getElementById('chSub');const chTeamColor=document.getElementById('chTeamColor');const timerNum=document.getElementById('timerNum');const timerFg=document.getElementById('timerFg');const RING_CIRC=2*Math.PI*55;timerFg.setAttribute('stroke-dasharray',RING_CIRC);
+
+function openChallenge(team,type,at,target){
+  pendingChallenge={teamId:team.id,type,at,target};
+  chTeamColor.style.background=team.color;
+  const shadowTrapdoor=state.mode==='shadow'&&type==='snake';
+  chTitle.textContent=(type==='ladder'?'Ladder Challenge ó ':(shadowTrapdoor?'Trapdoor! ó ':'Snake Defense ó '))+team.name;
+  chSub.textContent=type==='ladder'?`Complete the field challenge to climb from ${at} to ${target}. Fail, and the team stays on ${at}.`:`Complete the field challenge to block the snake and stay on ${at}. Fail, and the team slides down to ${target}.`;
+  modalEl.classList.remove('snakeType','ladderType');modalEl.classList.add(type==='ladder'?'ladderType':'snakeType');
+  modalBg.classList.remove('hidden');startTimer(15);playSound('challenge');
 }
 
-
-/* ============================= CHALLENGE MODAL ============================= */
-const modalBg = document.getElementById('challengeModalBg');
-const modalEl = document.getElementById('challengeModal');
-const chTitle = document.getElementById('chTitle');
-const chSub = document.getElementById('chSub');
-const timerNum = document.getElementById('timerNum');
-const timerFg = document.getElementById('timerFg');
-const RING_CIRC = 2*Math.PI*52;
-timerFg.setAttribute('stroke-dasharray', RING_CIRC);
-
-function openChallenge(team, type, at, target){
-  pendingChallenge = {teamId:team.id, type, at, target};
-  const shadowTrapdoor = state.mode==='shadow' && type==='snake';
-  chTitle.textContent = (type==='ladder' ? 'Ladder Challenge ‚Äî ' : (shadowTrapdoor ? 'Trapdoor! ‚Äî ' : 'Snake Defense ‚Äî ')) + team.name;
-  chSub.textContent = type==='ladder'
-    ? `Complete the field challenge to climb from ${at} to ${target}. Fail, and the team stays on ${at}.`
-    : `Complete the field challenge to block the snake and stay on ${at}. Fail, and the team slides down to ${target}.`;
-  modalEl.classList.remove('snakeType','ladderType');
-  modalEl.classList.add(type==='ladder' ? 'ladderType' : 'snakeType');
-  modalBg.classList.remove('hidden');
-  startTimer(15);
-}
 function startTimer(seconds){
-  let remaining = seconds;
-  timerNum.textContent = remaining;
-  timerFg.style.strokeDashoffset = 0;
+  let remaining=seconds;timerNum.textContent=remaining;timerFg.style.strokeDashoffset=0;timerNum.classList.remove('warning');
   clearInterval(timerInterval);
-  timerInterval = setInterval(()=>{
-    remaining -= 1;
-    timerNum.textContent = Math.max(remaining,0);
-    const frac = Math.max(remaining,0)/seconds;
-    timerFg.style.strokeDashoffset = RING_CIRC*(1-frac);
-    if(remaining<=0){
-      clearInterval(timerInterval);
-      resolveChallenge(false); // time's up = fail
-    }
-  },1000);
+  timerInterval=setInterval(()=>{remaining-=1;timerNum.textContent=Math.max(remaining,0);const frac=Math.max(remaining,0)/seconds;timerFg.style.strokeDashoffset=RING_CIRC*(1-frac);if(remaining<=5)timerNum.classList.add('warning');if(remaining<=0){clearInterval(timerInterval);resolveChallenge(false);}},1000);
 }
-document.getElementById('btnChComplete').addEventListener('click', ()=>resolveChallenge(true));
-document.getElementById('btnChFail').addEventListener('click', ()=>resolveChallenge(false));
+document.getElementById('btnChComplete').addEventListener('click',()=>resolveChallenge(true));
+document.getElementById('btnChFail').addEventListener('click',()=>resolveChallenge(false));
 
 function resolveChallenge(success){
-  clearInterval(timerInterval);
-  modalBg.classList.add('hidden');
-  if(!pendingChallenge) return;
-  const {teamId, type, at, target} = pendingChallenge;
-  const team = state.teams.find(t=>t.id===teamId);
-  pendingChallenge = null;
-  if(!team){ return; }
-
-  if(type==='ladder'){
-    if(success){
-      team.pos = target;
-      logEntry(`<b>${team.name}</b> passed the ladder challenge ‚Äî climbs to ${target}! ü™ú`, 'ladder');
-    } else {
-      logEntry(`<b>${team.name}</b> failed the ladder challenge ‚Äî stays on ${at}.`, 'ladder');
-    }
-  } else {
-    if(success){
-      logEntry(`<b>${team.name}</b> defended against the snake ‚Äî stays on ${at}. üõ°Ô∏è`, 'snake');
-    } else {
-      team.pos = target;
-      logEntry(`<b>${team.name}</b> failed the defense ‚Äî slides down to ${target}. üêç`, 'snake');
-    }
-  }
-  saveState();
-  renderPawns(); renderTeams();
-
-  if(team.pos===100){
-    finishMatch(team);
-    return;
-  }
-  advanceTurn();
-  saveState(); renderAll();
+  clearInterval(timerInterval);modalBg.classList.add('hidden');
+  if(!pendingChallenge)return;
+  const{teamId,type,at,target}=pendingChallenge;const team=state.teams.find(t=>t.id===teamId);pendingChallenge=null;
+  if(!team)return;
+  if(type==='ladder'){if(success){team.pos=target;logEntry(`<b>${team.name}</b> passed the ladder challenge ó climbs to ${target}! ??`,'ladder');playSound('success');}else{logEntry(`<b>${team.name}</b> failed the ladder challenge ó stays on ${at}.`,'ladder');playSound('fail');}}
+  else{if(success){logEntry(`<b>${team.name}</b> defended against the snake ó stays on ${at}. ???`,'snake');playSound('success');}else{team.pos=target;logEntry(`<b>${team.name}</b> failed the defense ó slides down to ${target}. ??`,'snake');playSound('fail');}}
+  saveState();renderPawns();renderTeams();
+  if(team.pos===100){finishMatch(team);return;}
+  advanceTurn();saveState();renderAll();
 }
 
-/* ============================= WIN / VICTORY ============================= */
 function finishMatch(winner){
-  state.finished = true;
-  logEntry(`üèÜ <b>${winner.name}</b> reached square 100 and wins the match!`, 'win');
-  // leaderboard update
-  state.teams.forEach(t=>{
-    if(!leaderboard[t.name]) leaderboard[t.name] = {wins:0, losses:0, matches:0};
-    leaderboard[t.name].matches += 1;
-    if(t.id===winner.id) leaderboard[t.name].wins += 1;
-    else leaderboard[t.name].losses += 1;
-  });
-  saveLeaderboard();
-  saveState();
-  renderLeaderboard();
-  renderAll();
-  document.getElementById('victoryName').textContent = winner.name.toUpperCase() + " WINS";
-  document.getElementById('victoryBg').classList.remove('hidden');
+  state.finished=true;logEntry(`?? <b>${winner.name}</b> reached square 100 and wins the match!`,'win');
+  state.teams.forEach(t=>{if(!leaderboard[t.name])leaderboard[t.name]={wins:0,losses:0,matches:0};leaderboard[t.name].matches+=1;if(t.id===winner.id)leaderboard[t.name].wins+=1;else leaderboard[t.name].losses+=1;});
+  saveLeaderboard();saveState();renderLeaderboard();renderAll();
+  document.getElementById('victoryName').textContent=winner.name.toUpperCase()+" WINS";document.getElementById('victoryBg').classList.remove('hidden');
+  playSound('victory');spawnConfetti();
 }
-document.getElementById('btnVictoryClose').addEventListener('click', ()=>{
-  document.getElementById('victoryBg').classList.add('hidden');
-});
+document.getElementById('btnVictoryClose').addEventListener('click',()=>{document.getElementById('victoryBg').classList.add('hidden');resetMatch();});
 
-/* ============================= LOG ============================= */
-const logListEl = document.getElementById('logList');
-function logEntry(html, cls){
-  const div = document.createElement('div');
-  div.className = 'entry ' + (cls||'');
-  div.innerHTML = html + `<div style="opacity:.5;font-size:10.5px;margin-top:2px;">${new Date().toLocaleTimeString()}</div>`;
-  if(logListEl.querySelector('.empty-note')) logListEl.innerHTML="";
-  logListEl.appendChild(div);
-}
+const logListEl=document.getElementById('logList');
+function logEntry(html,cls){state.log.push({html,cls:cls||'',time:Date.now()});const div=document.createElement('div');div.className='entry '+(cls||'')+' new';div.innerHTML=html+`<div class="time">${new Date().toLocaleTimeString()}</div>`;if(logListEl.querySelector('.empty-note'))logListEl.innerHTML="";logListEl.appendChild(div);setTimeout(()=>div.classList.remove('new'),300);}
 function renderLog(){
   logListEl.innerHTML="";
-  if(!state.history || state.history.length===0){
-    logListEl.innerHTML = `<div class="empty-note">No rolls yet ‚Äî start the match to begin logging.</div>`;
-    return;
+  if(!state.log||state.log.length===0){logListEl.innerHTML=`<div class="empty-note">No rolls yet ó start the match to begin logging.</div>`;return;}
+  state.log.forEach(h=>{const div=document.createElement('div');div.className='entry '+(h.cls||'');div.innerHTML=h.html+`<div class="time">${new Date(h.time).toLocaleTimeString()}</div>`;logListEl.appendChild(div);});
+}
+
+function renderLeaderboard(){const body=document.getElementById('lbBody');const rows=Object.entries(leaderboard).sort((a,b)=>b[1].wins-a[1].wins);if(rows.length===0){body.innerHTML=`<tr><td colspan="5" class="empty-note">No completed matches yet.</td></tr>`;}else{body.innerHTML=rows.map(([name,r],i)=>`<tr><td class="lb-rank">${i+1}</td><td>${escapeHtml(name)}</td><td class="lb-wins">${r.wins}</td><td>${r.losses}</td><td>${r.matches}</td></tr>`).join('');}}
+
+function resetMatch(){
+  if(!confirm("Reset the current match? Team names are kept, positions and history clear."))return;
+  state.started=false;state.finished=false;state.turnIndex=0;state.history=[];state.log=[];
+  state.teams.forEach(t=>{t.pos=1;t.active=true;t.inventory={shield:1,sabotage:1,swapper:1,loadedDie:1};t.shieldArmed=false;});
+  state.revealed={};state.brokenLadders={};state.gravity={turnsSinceShift:0,invert:false,invertTurnsLeft:0,quicksand:[],quicksandTurnsLeft:0,bounty:null,frozen:{}};
+  armedLoadedDie=null;undoStack=[];resetDice();saveState();buildBoard();renderAll();toast("Match reset.");
+}
+document.getElementById('btnResetMatch').addEventListener('click',resetMatch);
+document.getElementById('btnClearAll').addEventListener('click',()=>{if(!confirm("Clear ALL data ó teams, history, and the leaderboard? This cannot be undone."))return;localStorage.removeItem(LS_STATE);localStorage.removeItem(LS_LEADERBOARD);state={teams:[],turnIndex:0,started:false,finished:false,history:[],log:[],mode:'classic',revealed:{},brokenLadders:{},gravity:{turnsSinceShift:0,invert:false,invertTurnsLeft:0,quicksand:[],quicksandTurnsLeft:0,bounty:null,frozen:{}}};leaderboard={};undoStack=[];armedLoadedDie=null;saveState();saveLeaderboard();buildBoard();renderAll();toast("All data cleared.");});
+document.getElementById('btnClearLb').addEventListener('click',()=>{if(!confirm("Clear leaderboard history? Current match is unaffected."))return;leaderboard={};saveLeaderboard();renderLeaderboard();toast("Leaderboard cleared.");});
+document.getElementById('btnRules').addEventListener('click',()=>{const modeInfo=MODES.map(m=>`ï ${m.name}: ${m.desc}`).join('\n');alert("Host workflow:\n\n1. Pick a Game Mode, add teams, then Start match.\n2. Tap Roll dice ó it's a true random roll, animated for the crowd.\n3. The team auto-moves that many squares.\n4. Landing on a ladder or snake runs a 15-second field challenge ó mark it Completed or Failed.\n5. First team to land exactly on 100 wins.\n\nGame Modes:\n"+modeInfo+"\n\nAll progress saves automatically, so a page refresh won't lose the match.");});
+
+let toastTimer=null;function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2600);}
+
+function renderStatus(){const el=document.getElementById('boardStatus');if(!state.started)el.textContent="∑ not started";else if(state.finished)el.textContent="∑ finished";else el.textContent="∑ live";}
+
+function renderAll(){renderTeams();renderPawns();renderTurnBanner();renderLog();renderLeaderboard();renderStatus();renderModeSelector();renderModePanels();document.getElementById('btnUndo').disabled=undoStack.length===0;resetDice();}
+
+/* ============================= CUSTOM PROMPT MODAL ============================= */
+const promptBg=document.getElementById('promptModalBg');const promptTitle=document.getElementById('promptTitle');const promptOptions=document.getElementById('promptOptions');let promptCallback=null;
+function showPrompt(title,subtitle,options,callback){promptTitle.textContent=title;promptOptions.innerHTML='';if(subtitle){const sub=document.createElement('p');sub.className='sub';sub.style.marginBottom='8px';sub.textContent=subtitle;promptOptions.appendChild(sub);}options.forEach(opt=>{const btn=document.createElement('div');btn.className='prompt-option';btn.innerHTML=`${opt.label}${opt.detail?`<div class="opt-detail">${opt.detail}</div>`:''}`;btn.addEventListener('click',()=>{promptBg.classList.add('hidden');callback(opt.value);});promptOptions.appendChild(btn);});promptBg.classList.remove('hidden');}
+document.getElementById('promptCancel').addEventListener('click',()=>{promptBg.classList.add('hidden');if(promptCallback)promptCallback(null);});
+
+/* ============================= SOUND EFFECTS ============================= */
+function initAudio(){if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext);}catch(e){soundEnabled=false;}}}
+function playSound(type){
+  if(!soundEnabled)return;initAudio();if(!audioCtx)return;
+  try{
+    const now=audioCtx.currentTime;
+    if(type==='roll'){for(let i=0;i<8;i++){const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=200+Math.random()*400;osc.type='square';gain.gain.setValueAtTime(0.08,now+i*0.055);gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.055+0.05);osc.start(now+i*0.055);osc.stop(now+i*0.055+0.05);}}
+    else if(type==='success'){const notes=[523,659,784];notes.forEach((freq,i)=>{const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=freq;osc.type='sine';gain.gain.setValueAtTime(0.15,now+i*0.12);gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.12+0.3);osc.start(now+i*0.12);osc.stop(now+i*0.12+0.3);});}
+    else if(type==='fail'){const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.setValueAtTime(300,now);osc.frequency.exponentialRampToValueAtTime(100,now+0.4);osc.type='sawtooth';gain.gain.setValueAtTime(0.12,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.4);osc.start(now);osc.stop(now+0.4);}
+    else if(type==='challenge'){const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=880;osc.type='sine';gain.gain.setValueAtTime(0.2,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.6);osc.start(now);osc.stop(now+0.6);}
+    else if(type==='victory'){const notes=[523,659,784,1047,784,1047];notes.forEach((freq,i)=>{const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=freq;osc.type='sine';gain.gain.setValueAtTime(0.18,now+i*0.15);gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.15+0.4);osc.start(now+i*0.15);osc.stop(now+i*0.15+0.4);});}
+    else if(type==='powerup'){const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.setValueAtTime(400,now);osc.frequency.exponentialRampToValueAtTime(800,now+0.2);osc.type='triangle';gain.gain.setValueAtTime(0.15,now);gain.gain.exponentialRampToValueAtTime(0.001,now+0.3);osc.start(now);osc.stop(now+0.3);}
+    else if(type==='start'){const notes=[392,523,659];notes.forEach((freq,i)=>{const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();osc.connect(gain);gain.connect(audioCtx.destination);osc.frequency.value=freq;osc.type='triangle';gain.gain.setValueAtTime(0.12,now+i*0.1);gain.gain.exponentialRampToValueAtTime(0.001,now+i*0.1+0.25);osc.start(now+i*0.1);osc.stop(now+i*0.1+0.25);});}
+  }catch(e){}
+}
+document.getElementById('btnSound').addEventListener('click',()=>{soundEnabled=!soundEnabled;document.getElementById('btnSound').textContent=soundEnabled?'??':'??';if(soundEnabled)initAudio();});
+
+/* ============================= CONFETTI ============================= */
+function spawnConfetti(){
+  const colors=['#e8a93a','#d44a3e','#3a8bc4','#5a9e6f','#9a5bc4','#f7c966'];
+  for(let i=0;i<60;i++){
+    const c=document.createElement('div');c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration=(2+Math.random()*2)+'s';
+    c.style.animationDelay=Math.random()*0.5+'s';
+    c.style.width=(6+Math.random()*8)+'px';c.style.height=(6+Math.random()*8)+'px';
+    c.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),4500);
   }
-  state.history.forEach(h=>{
-    let cls='move', html='';
-    if(h.event==='bounce'){ html = `<b>${h.teamName}</b> rolled ${h.roll} ‚Äî needed exact number, stays on ${h.from}.`; }
-    else { html = `<b>${h.teamName}</b> rolled ${h.roll} ‚Äî ${h.from} ‚Üí ${h.to}.`; }
-    const div = document.createElement('div');
-    div.className='entry '+cls;
-    div.innerHTML = html + `<div style="opacity:.5;font-size:10.5px;margin-top:2px;">${new Date(h.time).toLocaleTimeString()}</div>`;
-    logListEl.appendChild(div);
-  });
 }
 
-/* ============================= LEADERBOARD ============================= */
-function renderLeaderboard(){
-  const body = document.getElementById('lbBody');
-  const rows = Object.entries(leaderboard).sort((a,b)=>b[1].wins-a[1].wins);
-  if(rows.length===0){
-    body.innerHTML = `<tr><td colspan="4" class="empty-note">No completed matches yet.</td></tr>`;
-    return;
-  }
-  body.innerHTML = rows.map(([name,r])=>`<tr><td>${escapeHtml(name)}</td><td>${r.wins}</td><td>${r.losses}</td><td>${r.matches}</td></tr>`).join('');
-}
-
-/* ============================= ADMIN ============================= */
-document.getElementById('btnResetMatch').addEventListener('click', ()=>{
-  if(!confirm("Reset the current match? Team names are kept, positions and history clear.")) return;
-  state.started=false; state.finished=false; state.turnIndex=0; state.history=[];
-  state.teams.forEach(t=>{
-    t.pos=1; t.active=true;
-    t.inventory = {shield:1, sabotage:1, swapper:1, loadedDie:1};
-    t.shieldArmed = false;
-  });
-  state.revealed = {};
-  state.brokenLadders = {};
-  state.gravity = {turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}};
-  armedLoadedDie = null;
-  undoStack=[];
-  resetDice();
-  saveState(); buildBoard(); renderAll();
-  toast("Match reset.");
-});
-document.getElementById('btnClearAll').addEventListener('click', ()=>{
-  if(!confirm("Clear ALL data ‚Äî teams, history, and the leaderboard? This cannot be undone.")) return;
-  localStorage.removeItem(LS_STATE); localStorage.removeItem(LS_LEADERBOARD); localStorage.removeItem(LS_LOG);
-  state = {
-    teams:[], turnIndex:0, started:false, finished:false, history:[],
-    mode:'classic', revealed:{}, brokenLadders:{},
-    gravity:{turnsSinceShift:0, invert:false, invertTurnsLeft:0, quicksand:[], quicksandTurnsLeft:0, bounty:null, frozen:{}}
-  };
-  leaderboard = {};
-  undoStack=[];
-  armedLoadedDie = null;
-  saveState(); saveLeaderboard();
-  buildBoard(); renderAll();
-  toast("All data cleared.");
-});
-document.getElementById('btnClearLb').addEventListener('click', ()=>{
-  if(!confirm("Clear leaderboard history? Current match is unaffected.")) return;
-  leaderboard = {};
-  saveLeaderboard(); renderLeaderboard();
-  toast("Leaderboard cleared.");
-});
-document.getElementById('btnRules').addEventListener('click', ()=>{
-  const modeInfo = MODES.map(m=>`‚Ä¢ ${m.name}: ${m.desc}`).join('\n');
-  alert("Host workflow:\n\n1. Pick a Game Mode, add teams, then Start match.\n2. Tap Roll dice ‚Äî it's a true random roll, animated for the crowd.\n3. The team auto-moves that many squares.\n4. Landing on a ladder or snake runs a 15-second field challenge ‚Äî mark it Completed or Failed.\n5. First team to land exactly on 100 wins.\n\nGame Modes:\n" + modeInfo + "\n\nAll progress saves automatically, so a page refresh won't lose the match.");
-});
-
-/* ============================= TOAST ============================= */
-let toastTimer=null;
-function toast(msg){
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('show'), 2600);
-}
-
-/* ============================= STATUS ============================= */
-function renderStatus(){
-  const el = document.getElementById('boardStatus');
-  if(!state.started) el.textContent = "¬∑ not started";
-  else if(state.finished) el.textContent = "¬∑ finished";
-  else el.textContent = "¬∑ live";
-}
-
-/* ============================= RENDER ALL ============================= */
-function renderAll(){
-  renderTeams();
-  renderPawns();
-  renderTurnBanner();
-  renderLog();
-  renderLeaderboard();
-  renderStatus();
-  renderModeSelector();
-  renderModePanels();
-  document.getElementById('btnUndo').disabled = undoStack.length===0;
-  resetDice();
-}
-
-buildBoard();
-renderAll();
-window.addEventListener('resize', drawOverlay);
+buildBoard();renderAll();
+window.addEventListener('resize',drawOverlay);
 
 })();
 </script>
