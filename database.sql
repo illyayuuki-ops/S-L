@@ -27,11 +27,14 @@ CREATE TABLE teams (
 CREATE TABLE matches (
     id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     mode            ENUM('classic', 'shadow', 'draft', 'gravity') NOT NULL DEFAULT 'classic',
+    player_count    TINYINT UNSIGNED NOT NULL DEFAULT 2,
     winner_team_id  INT UNSIGNED NULL,
     status          ENUM('live', 'finished', 'reset') NOT NULL DEFAULT 'live',
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     finished_at     TIMESTAMP NULL,
-    FOREIGN KEY (winner_team_id) REFERENCES teams(id) ON DELETE SET NULL
+    FOREIGN KEY (winner_team_id) REFERENCES teams(id) ON DELETE SET NULL,
+    INDEX idx_mode_pc (mode, player_count, status),
+    INDEX idx_finished (status, finished_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------
@@ -54,6 +57,25 @@ CREATE TABLE leaderboard (
     losses        INT UNSIGNED NOT NULL DEFAULT 0,
     total_matches INT UNSIGNED NOT NULL DEFAULT 0,
     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------
+-- Arena — Top 50 rankings per (mode + player_count)
+-- Tracks each completed match's winner with a rank score.
+-- --------------------------------------------
+CREATE TABLE arena_entries (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    team_id         INT UNSIGNED NOT NULL,
+    match_id        INT UNSIGNED NOT NULL,
+    mode            ENUM('classic', 'shadow', 'draft', 'gravity') NOT NULL,
+    player_count    TINYINT UNSIGNED NOT NULL,
+    rank_score      INT NOT NULL DEFAULT 0,
+    turns_to_win    INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_team_match (team_id, match_id),
+    INDEX idx_arena_lookup (mode, player_count, rank_score DESC, created_at),
+    FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+    FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------

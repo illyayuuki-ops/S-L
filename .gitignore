@@ -1,0 +1,19 @@
+# Dependencies
+/vendor/
+
+# Secrets — must NEVER be committed
+/.env
+/.env.local
+
+# Runtime
+/sessions/
+/.cache/
+
+# OS / editor
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

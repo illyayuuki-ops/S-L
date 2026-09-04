@@ -1,23 +1,28 @@
 <?php
 /**
  * api/load_game.php
- * Returns the current match state (or creates a new match if none exists)
+ *
+ * Returns the most recent live match. Read-only — public, but still
+ * needs the session cookie so we can scope the response and apply rate limit.
  */
 
 declare(strict_types=1);
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
+require_once __DIR__ . '/../config/security.php';
+
+header('Vary: Origin');
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin !== '' && $origin !== sl_origin()) {
+    sl_json_out(['success' => false, 'error' => 'Cross-origin requests denied'], 403);
+}
+
+if (!sl_rate_limit('load', 240)) {
+    sl_json_out(['success' => false, 'error' => 'Too many requests'], 429);
 }
 
 require_once __DIR__ . '/../config/db.php';
 
 try {
-    // Find the most recent live match
     $stmt = $pdo->query("
         SELECT m.id, m.mode, m.status, m.created_at,
                ms.current_turn_index, ms.state_json
@@ -30,52 +35,40 @@ try {
     $match = $stmt->fetch();
 
     if (!$match) {
-        // No active match — return empty state
-        echo json_encode([
+        sl_json_out([
             'success' => true,
-            'match' => null,
-            'state' => [
-                'teams' => [],
-                'turnIndex' => 0,
-                'started' => false,
-                'finished' => false,
-                'history' => [],
-                'log' => [],
-                'mode' => 'classic',
+            'match'   => null,
+            'state'   => [
+                'teams' => [], 'turnIndex' => 0,
+                'started' => false, 'finished' => false,
+                'history' => [], 'log' => [], 'mode' => 'classic',
                 'revealed' => new stdClass(),
                 'brokenLadders' => new stdClass(),
                 'gravity' => [
-                    'turnsSinceShift' => 0,
-                    'invert' => false,
-                    'invertTurnsLeft' => 0,
-                    'quicksand' => [],
-                    'quicksandTurnsLeft' => 0,
-                    'bounty' => null,
+                    'turnsSinceShift' => 0, 'invert' => false,
+                    'invertTurnsLeft' => 0, 'quicksand' => [],
+                    'quicksandTurnsLeft' => 0, 'bounty' => null,
                     'frozen' => new stdClass()
                 ]
             ]
         ]);
-        exit;
     }
 
-    $state = json_decode($match['state_json'], true);
-    if (!$state) {
-        $state = [];
-    }
+    $state = json_decode($match['state_json'], true) ?: [];
 
-    echo json_encode([
+    sl_json_out([
         'success' => true,
         'match' => [
-            'id' => (int)$match['id'],
-            'mode' => $match['mode'],
-            'status' => $match['status'],
-            'created_at' => $match['created_at'],
-            'current_turn_index' => (int)$match['current_turn_index']
+            'id'                 => (int)$match['id'],
+            'mode'               => $match['mode'],
+            'status'             => $match['status'],
+            'created_at'         => $match['created_at'],
+            'current_turn_index' => (int)$match['current_turn_index'],
+            'player_count'       => isset($match['player_count']) ? (int)$match['player_count'] : 2
         ],
         'state' => $state
     ]);
-
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+} catch (Throwable $e) {
+    error_log('load_game: ' . $e->getMessage());
+    sl_json_out(['success' => false, 'error' => 'Internal error'], 500);
 }

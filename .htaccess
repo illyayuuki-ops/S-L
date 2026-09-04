@@ -1,0 +1,50 @@
+# ============================================
+# Snakes & Ladders — Root .htaccess
+# Hardening + (optional) HTTPS enforcement
+# ============================================
+
+# --- Deny direct access to sensitive files ---
+<FilesMatch "^(\.env|\.env\..*|composer\.(json|lock)|package(-lock)?\.json|\.gitignore|\.htaccess|\.htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(md|sql|log|ini|sample)$">
+    Require all denied
+</FilesMatch>
+
+# --- Force HTTPS ONLY when the server is reachable over 443 with a valid cert.
+# Disabled by default for local Laragon dev (no matching cert = connection dies).
+# To enable on production: set env HTTPS_REDIRECT=1 in the Apache vhost, e.g.:
+#   SetEnv HTTPS_REDIRECT 1
+# Then uncomment the Rewrite block below.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Only redirect when explicitly opted in AND the request wasn't already HTTPS
+    RewriteCond %{ENV:HTTPS_REDIRECT} =1
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+</IfModule>
+
+# --- Security headers (always on, safe for both HTTP dev + HTTPS prod) ---
+<IfModule mod_headers.c>
+    # Only emit HSTS over HTTPS — browsers must ignore it on plain HTTP anyway,
+    # but be explicit so we don't accidentally pin a non-existent HTTPS endpoint.
+    Header set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" env=HTTPS
+
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Header always set Cross-Origin-Opener-Policy "same-origin"
+    Header always set Cross-Origin-Resource-Policy "same-origin"
+
+    # CSP — inline styles/scripts allowed because the game emits inline SVG and dynamic styles.
+    # 'unsafe-inline' on style/script is required for the current implementation.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+
+    Header always unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+# --- Disable directory listing ---
+Options -Indexes

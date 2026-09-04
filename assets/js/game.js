@@ -21,20 +21,23 @@ const MODES = [
 ];
 
 /* ---------- STATE ---------- */
-let state = {
-  teams: [],
-  turnIndex: 0,
-  started: false,
-  finished: false,
-  history: [],
-  log: [],
-  mode: 'classic',
-  revealed: {},
-  brokenLadders: {},
-  gravity: { turnsSinceShift: 0, invert: false, invertTurnsLeft: 0, quicksand: [], quicksandTurnsLeft: 0, bounty: null, frozen: {} }
-};
-
+let state = freshState();
 let leaderboard = {};
+
+function freshState() {
+  return {
+    teams: [],
+    turnIndex: 0,
+    started: false,
+    finished: false,
+    history: [],
+    log: [],
+    mode: 'classic',
+    revealed: {},
+    brokenLadders: {},
+    gravity: { turnsSinceShift: 0, invert: false, invertTurnsLeft: 0, quicksand: [], quicksandTurnsLeft: 0, bounty: null, frozen: {} }
+  };
+}
 let pendingChallenge = null;
 let timerInterval = null;
 let undoStack = [];
@@ -54,36 +57,72 @@ const dieBig = $('dieBig');
 const btnRoll = $('btnRoll');
 let isRolling = false;
 
+/* ---------- 3D DICE ---------- */
+let diceEl = null;
+let diceFace = 1;
+function buildDice() {
+  const wrap = document.createElement('div');
+  wrap.className = 'dice-3d-wrap';
+  const inner = document.createElement('div');
+  inner.className = 'dice-3d';
+  for (let f = 1; f <= 6; f++) {
+    const face = document.createElement('div');
+    face.className = 'face show-' + f;
+    for (let p = 0; p < f; p++) {
+      const pip = document.createElement('i');
+      face.appendChild(pip);
+    }
+    inner.appendChild(face);
+  }
+  wrap.append(inner);
+  diceEl = inner;
+  // Replace legacy dieBig
+  if (dieBig && dieBig.parentNode) {
+    dieBig.style.display = 'none';
+    dieBig.parentNode.insertBefore(wrap, dieBig);
+  }
+  rotateDiceTo(1);
+}
+function rotateDiceTo(n) {
+  diceFace = n;
+  if (!diceEl) return;
+  const rot = {
+    1: 'rotateX(0deg) rotateY(0deg)',
+    2: 'rotateX(180deg) rotateY(0deg)',
+    3: 'rotateX(0deg) rotateY(-90deg)',
+    4: 'rotateX(0deg) rotateY(90deg)',
+    5: 'rotateX(-90deg) rotateY(0deg)',
+    6: 'rotateX(90deg) rotateY(0deg)'
+  };
+  diceEl.style.transform = rot[n];
+}
+
 /* ============================================
    API INTEGRATION
    ============================================ */
 async function apiLoad() {
   try {
-    const res = await fetch(`${CONFIG.API_BASE}/load_game.php`);
+    const res = await fetch(`${CONFIG.API_BASE}/load_game.php`, { credentials: 'same-origin' });
     const data = await res.json();
     if (data.success && data.match) {
       currentMatchId = data.match.id;
-      state = data.state || state;
-      localStorage.setItem(CONFIG.LS_KEY, String(currentMatchId));
+      state = data.state || freshState();
     } else {
-      state = {
-        teams: [], turnIndex: 0, started: false, finished: false,
-        history: [], log: [], mode: 'classic',
-        revealed: {}, brokenLadders: {},
-        gravity: { turnsSinceShift: 0, invert: false, invertTurnsLeft: 0, quicksand: [], quicksandTurnsLeft: 0, bounty: null, frozen: {} }
-      };
+      state = freshState();
     }
   } catch (e) {
     console.warn('Failed to load from server, using defaults:', e);
-    state = {
-      teams: [], turnIndex: 0, started: false, finished: false,
-      history: [], log: [], mode: 'classic',
-      revealed: {}, brokenLadders: {},
-      gravity: { turnsSinceShift: 0, invert: false, invertTurnsLeft: 0, quicksand: [], quicksandTurnsLeft: 0, bounty: null, frozen: {} }
-    };
+    state = freshState();
   }
-  renderAll();
-  startAutoSave();
+}
+
+function slHeaders() {
+  return {
+    'Content-Type': 'application/json'
+  };
+}
+function slHandle401(res) {
+  return false;
 }
 
 async function apiSave(status = 'live') {
@@ -94,21 +133,16 @@ async function apiSave(status = 'live') {
   if (!currentMatchId) return;
 
   try {
-    const payload = {
-      match_id: currentMatchId,
-      mode: state.mode,
-      state: state,
-      status: status
-    };
+    const payload = { match_id: currentMatchId, mode: state.mode, player_count: state.teams.length, state: state, status: status };
     const res = await fetch(`${CONFIG.API_BASE}/save_game.php`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: slHeaders(),
       body: JSON.stringify(payload)
     });
+    if (slHandle401(res)) return;
     const data = await res.json();
-    if (data.success && data.match_id) {
-      currentMatchId = data.match_id;
-    }
+    if (data.success && data.match_id) currentMatchId = data.match_id;
   } catch (e) {
     console.warn('Auto-save failed:', e);
   }
@@ -116,17 +150,16 @@ async function apiSave(status = 'live') {
 
 async function apiCreateMatch(status = 'live') {
   try {
-    const payload = { mode: state.mode, state: state, status: status };
+    const payload = { mode: state.mode, player_count: state.teams.length, state: state, status: status };
     const res = await fetch(`${CONFIG.API_BASE}/save_game.php`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: slHeaders(),
       body: JSON.stringify(payload)
     });
+    if (slHandle401(res)) return;
     const data = await res.json();
-    if (data.success && data.match_id) {
-      currentMatchId = data.match_id;
-      localStorage.setItem(CONFIG.LS_KEY, String(currentMatchId));
-    }
+    if (data.success && data.match_id) currentMatchId = data.match_id;
   } catch (e) {
     console.warn('Failed to create match:', e);
   }
@@ -134,7 +167,7 @@ async function apiCreateMatch(status = 'live') {
 
 async function apiLoadLeaderboard() {
   try {
-    const res = await fetch(`${CONFIG.API_BASE}/leaderboard.php`);
+    const res = await fetch(`${CONFIG.API_BASE}/leaderboard.php`, { credentials: 'same-origin' });
     const data = await res.json();
     if (data.success) {
       leaderboard = {};
@@ -313,15 +346,19 @@ function renderPawns() {
   const activeTeams = state.teams.filter(t => t.active);
   const bySquare = {};
   activeTeams.forEach(t => { (bySquare[t.pos] = bySquare[t.pos] || []).push(t); });
+  const cur = currentTeam();
   Object.entries(bySquare).forEach(([sq, teams]) => {
     teams.forEach((t, i) => {
       const { x, y } = squareCenterPct(Math.max(1, t.pos));
       const spread = teams.length > 1 ? (i - (teams.length - 1) / 2) * 3.2 : 0;
       const pawn = document.createElement('div');
-      pawn.className = 'pawn';
+      pawn.className = 'pawn' + (cur && cur.id === t.id ? ' is-active' : '');
+      pawn.dataset.teamId = t.id;
       pawn.style.background = t.color;
+      pawn.style.color = t.color;
       pawn.style.left = `calc(${x + spread}% - 2.8%)`;
       pawn.style.top = `calc(${y}% - 2.8%)`;
+      pawn.style.setProperty('--currentColor', t.color);
       pawn.title = t.name;
       holder.appendChild(pawn);
     });
@@ -427,18 +464,24 @@ function renderModeSelector() {
       saveState(); renderModeSelector(); renderModePanels(); buildBoard();
     });
   });
-  $('shadowPanel').style.display = state.mode === 'shadow' ? '' : 'none';
-  $('draftPanel').style.display = state.mode === 'draft' ? '' : 'none';
-  $('gravityPanel').style.display = state.mode === 'gravity' ? '' : 'none';
+  const shadowPanel = $('shadowPanel');
+  const draftPanel = $('draftPanel');
+  const gravityPanel = $('gravityPanel');
+  if (shadowPanel) shadowPanel.style.display = state.mode === 'shadow' ? '' : 'none';
+  if (draftPanel) draftPanel.style.display = state.mode === 'draft' ? '' : 'none';
+  if (gravityPanel) gravityPanel.style.display = state.mode === 'gravity' ? '' : 'none';
 }
 
 function renderModePanels() {
-  $('shadowPanel').style.display = state.mode === 'shadow' ? '' : 'none';
-  $('draftPanel').style.display = state.mode === 'draft' ? '' : 'none';
-  $('gravityPanel').style.display = state.mode === 'gravity' ? '' : 'none';
-  if (state.mode === 'shadow') renderMasterKey();
-  if (state.mode === 'draft') renderDraftPanel();
-  if (state.mode === 'gravity') renderGravityPanel();
+  const shadowPanel = $('shadowPanel');
+  const draftPanel = $('draftPanel');
+  const gravityPanel = $('gravityPanel');
+  if (shadowPanel) shadowPanel.style.display = state.mode === 'shadow' ? '' : 'none';
+  if (draftPanel) draftPanel.style.display = state.mode === 'draft' ? '' : 'none';
+  if (gravityPanel) gravityPanel.style.display = state.mode === 'gravity' ? '' : 'none';
+  if (state.mode === 'shadow' && shadowPanel) renderMasterKey();
+  if (state.mode === 'draft' && draftPanel) renderDraftPanel();
+  if (state.mode === 'gravity' && gravityPanel) renderGravityPanel();
 }
 
 /* --- Shadow Grid --- */
@@ -524,6 +567,11 @@ function applyShift(type) {
   if (type === 'invert') {
     g.invert = true; g.invertTurnsLeft = 3;
     logEntry(`?? Audience vote: <b>Invert Gravity</b> — all snakes and ladders swap for the next 3 turns!`, 'win');
+    const holder = $('boardHolder');
+    if (holder) {
+      holder.classList.add('flip');
+      setTimeout(() => holder.classList.remove('flip'), 1200);
+    }
   } else if (type === 'quicksand') {
     const all = Array.from({ length: 97 }, (_, i) => i + 2);
     const picks = [];
@@ -545,17 +593,22 @@ function renderGravityPanel() {
   const g = state.gravity;
   const remaining = Math.max(0, 3 - g.turnsSinceShift);
   const ready = state.started && !state.finished && remaining === 0;
-  $('shiftStatus').textContent = ready
+  const shiftStatus = $('shiftStatus');
+  if (shiftStatus) shiftStatus.textContent = ready
     ? "Board Shift ready — read out the crowd's poll result and pick the outcome."
     : `Board Shift available in ${remaining} turn${remaining === 1 ? '' : 's'}.`;
-  $('btnInvert').disabled = !ready;
-  $('btnQuicksand').disabled = !ready;
-  $('btnBounty').disabled = !ready;
+  const btnInvert = $('btnInvert');
+  const btnQuicksand = $('btnQuicksand');
+  const btnBounty = $('btnBounty');
+  if (btnInvert) btnInvert.disabled = !ready;
+  if (btnQuicksand) btnQuicksand.disabled = !ready;
+  if (btnBounty) btnBounty.disabled = !ready;
+  const activeModifiers = $('activeModifiers');
   const mods = [];
   if (g.invert) mods.push(`Gravity inverted (${g.invertTurnsLeft} turn${g.invertTurnsLeft === 1 ? '' : 's'} left)`);
   if (g.quicksand.length) mods.push(`Quicksand on ${g.quicksand.join(', ')} (${g.quicksandTurnsLeft} turn${g.quicksandTurnsLeft === 1 ? '' : 's'} left)`);
   if (g.bounty) mods.push(`Bounty active on square ${g.bounty}`);
-  $('activeModifiers').textContent = mods.length ? mods.join(' · ') : 'No active modifiers.';
+  if (activeModifiers) activeModifiers.textContent = mods.length ? mods.join(' · ') : 'No active modifiers.';
 }
 
 /* ============================================
@@ -584,21 +637,24 @@ function renderTurnBanner() {
 /* ============================================
    DICE & MOVEMENT
    ============================================ */
-btnRoll.addEventListener('click', () => {
+btnRoll.addEventListener('click', () => doRoll());
+
+function doRoll() {
   if (isRolling) return;
   if (!state.started || state.finished) return toast('Start the match first.');
   const team = currentTeam();
   if (!team) return toast('No team available.');
   if (state.mode === 'gravity' && state.gravity.frozen[team.id]) {
     delete state.gravity.frozen[team.id];
-    logEntry(`?? <b>${team.name}</b> is frozen and skips this turn.`, 'move');
-    advanceTurn(); saveState(); renderAll(); resetDice();
+    logEntry(`<b>${team.name}</b> is frozen and skips this turn.`, 'move');
+    advanceTurn(); saveState(); renderAll(); resetDice(); apiSave('live');
     return;
   }
 
   isRolling = true;
   btnRoll.disabled = true;
-  dieBig.classList.add('rolling');
+  const mob = $('btnRollMobile'); if (mob) mob.disabled = true;
+  if (diceEl) diceEl.classList.add('rolling');
   playSound('roll');
 
   const range = (state.mode === 'draft' && armedLoadedDie) ? armedLoadedDie : null;
@@ -607,15 +663,18 @@ btnRoll.addEventListener('click', () => {
 
   let ticks = 0;
   const spin = setInterval(() => {
-    dieBig.textContent = min + Math.floor(Math.random() * (max - min + 1));
+    const f = min + Math.floor(Math.random() * (max - min + 1));
+    rotateDiceTo(f);
     ticks++;
-    if (ticks > 15) {
+    if (ticks > 16) {
       clearInterval(spin);
       const finalRoll = min + Math.floor(Math.random() * (max - min + 1));
-      dieBig.textContent = finalRoll;
-      dieBig.classList.remove('rolling');
-      dieBig.classList.add('bounce');
-      setTimeout(() => dieBig.classList.remove('bounce'), 300);
+      rotateDiceTo(finalRoll);
+      if (diceEl) {
+        diceEl.classList.remove('rolling');
+        diceEl.classList.add('landed');
+        setTimeout(() => diceEl.classList.remove('landed'), 450);
+      }
       isRolling = false;
       if (range && team) {
         team.inventory.loadedDie -= 1;
@@ -626,8 +685,8 @@ btnRoll.addEventListener('click', () => {
       }
       processMove(finalRoll);
     }
-  }, 55);
-});
+  }, 60);
+}
 
 $('btnUndo').addEventListener('click', undoLast);
 
@@ -647,43 +706,49 @@ function processMove(steps) {
     const entry = { teamId: team.id, teamName: team.name, roll: steps, from, to: from, event: 'bounce', time: Date.now() };
     state.history.push(entry);
     logEntry(`<b>${team.name}</b> rolled ${steps} — exceeds 100, needs the exact number. Stays on ${from}.`, 'move');
-    advanceTurn(); saveState(); renderAll(); resetDice();
-    return;
+    advanceTurn(); saveState(); renderAll(); resetDice(); apiSave('live'); return;
   }
 
-  team.pos = to;
-  const entry = { teamId: team.id, teamName: team.name, roll: steps, from, to, event: 'move', time: Date.now() };
-  state.history.push(entry);
-  logEntry(`<b>${team.name}</b> rolled ${steps} — moves ${from} ? ${to}.`, 'move');
-  saveState(); renderPawns(); renderTeams(); resetDice();
+  animatePawnHop(team.id, from, to, steps).then(() => {
+    team.pos = to;
+    state.history.push({ teamId: team.id, teamName: team.name, roll: steps, from, to, event: 'move', time: Date.now() });
+    logEntry(`<b>${team.name}</b> rolled ${steps} — moves ${from} ? ${to}.`, 'move');
+    saveState(); renderTeams(); resetDice();
 
-  if (state.mode === 'gravity' && state.gravity.bounty && to === state.gravity.bounty) {
-    state.gravity.bounty = null;
-    const bonusTo = Math.min(100, to + steps);
-    logEntry(`? <b>${team.name}</b> hit the Bounty square! Double move: ${to} ? ${bonusTo}.`, 'win');
-    team.pos = bonusTo;
-    saveState(); renderPawns(); renderTeams(); buildBoard();
-    if (bonusTo === 100) { finishMatch(team); return; }
-  }
-  if (state.mode === 'gravity' && state.gravity.quicksand.includes(team.pos)) {
-    state.gravity.frozen[team.id] = true;
-    logEntry(`?? <b>${team.name}</b> landed in Quicksand at ${team.pos} — frozen for their next turn.`, 'move');
-  }
+    if (state.mode === 'gravity' && state.gravity.bounty && to === state.gravity.bounty) {
+      state.gravity.bounty = null;
+      const bonusTo = Math.min(100, to + steps);
+      logEntry(`?? <b>${team.name}</b> hit the Bounty square! Double move: ${to} ? ${bonusTo}.`, 'win');
+      animatePawnClimb(team.id, to, bonusTo).then(() => {
+        team.pos = bonusTo;
+        saveState(); renderPawns(); renderTeams(); buildBoard();
+        if (bonusTo === 100) { finishMatch(team); return; }
+        resolvePostMove(team);
+      });
+      return;
+    }
+    if (state.mode === 'gravity' && state.gravity.quicksand.includes(team.pos)) {
+      state.gravity.frozen[team.id] = true;
+      logEntry(`?? <b>${team.name}</b> landed in Quicksand at ${team.pos} — frozen for their next turn.`, 'move');
+    }
 
-  if (team.pos === 100) { finishMatch(team); return; }
+    if (team.pos === 100) { finishMatch(team); return; }
+    resolvePostMove(team);
+  });
+}
 
+function resolvePostMove(team) {
   const to2 = team.pos;
   const ladders = activeLadders();
   const snakes = activeSnakes();
-
   if (state.mode === 'shadow' && (ladders[to2] || snakes[to2])) {
     state.revealed[to2] = true;
-    saveState(); buildBoard();
+    saveState(); buildBoard(); apiSave('live');
   }
   if (state.mode === 'draft' && ladders[to2] && state.brokenLadders[to2]) {
     delete state.brokenLadders[to2];
     logEntry(`?? <b>${team.name}</b> landed on a sabotaged ladder at ${to2} — it's broken, no climb.`, 'ladder');
-    saveState(); advanceTurn(); saveState(); renderAll(); return;
+    saveState(); advanceTurn(); saveState(); renderAll(); apiSave('live'); return;
   }
   if (ladders[to2]) {
     openChallenge(team, 'ladder', to2, ladders[to2]);
@@ -691,12 +756,126 @@ function processMove(steps) {
     if (state.mode === 'draft' && team.shieldArmed) {
       team.shieldArmed = false;
       logEntry(`??? <b>${team.name}</b>'s Deflector Shield blocked the snake at ${to2} — no challenge needed.`, 'snake');
-      saveState(); advanceTurn(); saveState(); renderAll(); return;
+      saveState(); advanceTurn(); saveState(); renderAll(); apiSave('live'); return;
     }
     openChallenge(team, 'snake', to2, snakes[to2]);
   } else {
-    advanceTurn(); saveState(); renderAll();
+    advanceTurn(); saveState(); renderAll(); apiSave('live');
   }
+}
+
+function animatePawnHop(teamId, from, to, steps) {
+  return new Promise((resolve) => {
+    team.pos = from;
+    renderPawns();
+    const pawn = pawnDom(teamId);
+    if (!pawn || steps <= 0) { resolve(); return; }
+    pawn.getBoundingClientRect();
+
+    if (steps > 1) {
+      const ghostHolder = $('boardHolder');
+      const stepMs = Math.max(110, 280 / steps);
+      let i = 1;
+      const tick = setInterval(() => {
+        if (i >= steps) { clearInterval(tick); return; }
+        const sq = from + i;
+        const { x, y } = squareCenterPct(sq);
+        const ghost = document.createElement('div');
+        ghost.className = 'pawn';
+        const tm = state.teams.find(t => t.id === teamId);
+        ghost.style.background = (tm && tm.color) || '#fff';
+        ghost.style.left = `calc(${x}% - 2.8%)`;
+        ghost.style.top  = `calc(${y}% - 2.8%)`;
+        ghost.style.opacity = '0.5';
+        ghost.style.transform = 'scale(0.65)';
+        ghost.style.transition = 'opacity 0.25s, transform 0.25s';
+        ghost.style.zIndex = '3';
+        ghost.style.pointerEvents = 'none';
+        ghostHolder.appendChild(ghost);
+        setTimeout(() => { ghost.style.opacity = '0'; ghost.style.transform = 'scale(0.3)'; }, 70);
+        setTimeout(() => ghost.remove(), 320);
+        i++;
+      }, stepMs);
+    }
+
+    team.pos = to;
+    renderPawns();
+    const target = pawnDom(teamId);
+    if (target) {
+      target.classList.add('hop');
+      setTimeout(() => target.classList.remove('hop'), 380);
+    }
+    const totalMs = Math.min(950, 200 + steps * 130);
+    setTimeout(resolve, totalMs);
+  });
+}
+
+function animatePawnClimb(teamId, from, to) {
+  return new Promise((resolve) => {
+    team.pos = from;
+    renderPawns();
+    const p = pawnDom(teamId);
+    if (p) p.getBoundingClientRect();
+    team.pos = to;
+    renderPawns();
+    const target = pawnDom(teamId);
+    if (target) {
+      target.classList.add('climb-up');
+      setTimeout(() => target.classList.remove('climb-up'), 900);
+    }
+    sparksAt(target, '#3a8bc4', 14);
+    setTimeout(resolve, 900);
+  });
+}
+
+function animatePawnSlide(teamId, from, to) {
+  return new Promise((resolve) => {
+    team.pos = from;
+    renderPawns();
+    const p = pawnDom(teamId);
+    if (p) p.getBoundingClientRect();
+    team.pos = to;
+    renderPawns();
+    const target = pawnDom(teamId);
+    if (target) {
+      target.classList.add('glide-down');
+      setTimeout(() => target.classList.remove('glide-down'), 900);
+    }
+    const boardHolder = $('boardHolder');
+    if (boardHolder) {
+      boardHolder.classList.add('shake-snake');
+      setTimeout(() => boardHolder.classList.remove('shake-snake'), 600);
+    }
+    sparksAt(target, '#d44a3e', 18);
+    setTimeout(resolve, 900);
+  });
+}
+
+function sparksAt(target, color, count) {
+  if (!target) return;
+  const r = target.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'spark';
+    s.style.left = (cx - 4 + (Math.random() - 0.5) * 36) + 'px';
+    s.style.top  = (cy - 4 + (Math.random() - 0.5) * 36) + 'px';
+    s.style.background = color;
+    s.style.position = 'fixed';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 36 + Math.random() * 90;
+    s.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    s.style.setProperty('--dy', Math.sin(angle) * dist - 20 + 'px');
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 1300);
+  }
+}
+
+function pawnDom(teamId) {
+  let p = document.querySelector('.pawn[data-team-id="' + teamId + '"]');
+  if (!p) { renderPawns(); p = document.querySelector('.pawn[data-team-id="' + teamId + '"]'); }
+  return p;
 }
 
 function resetDice() {
@@ -804,9 +983,15 @@ function resolveChallenge(success) {
 
   if (type === 'ladder') {
     if (success) {
-      team.pos = target;
       logEntry(`<b>${team.name}</b> passed the ladder challenge — climbs to ${target}! ??`, 'ladder');
       playSound('success');
+      animatePawnClimb(teamId, at, target).then(() => {
+        team.pos = target;
+        saveState(); renderPawns(); renderTeams();
+        if (team.pos === 100) { finishMatch(team); return; }
+        advanceTurn(); saveState(); renderAll(); apiSave('live');
+      });
+      return;
     } else {
       logEntry(`<b>${team.name}</b> failed the ladder challenge — stays on ${at}.`, 'ladder');
       playSound('fail');
@@ -816,14 +1001,20 @@ function resolveChallenge(success) {
       logEntry(`<b>${team.name}</b> defended against the snake — stays on ${at}. ???`, 'snake');
       playSound('success');
     } else {
-      team.pos = target;
       logEntry(`<b>${team.name}</b> failed the defense — slides down to ${target}. ??`, 'snake');
       playSound('fail');
+      animatePawnSlide(teamId, at, target).then(() => {
+        team.pos = target;
+        saveState(); renderPawns(); renderTeams();
+        if (team.pos === 100) { finishMatch(team); return; }
+        advanceTurn(); saveState(); renderAll(); apiSave('live');
+      });
+      return;
     }
   }
   saveState(); renderPawns(); renderTeams();
   if (team.pos === 100) { finishMatch(team); return; }
-  advanceTurn(); saveState(); renderAll();
+  advanceTurn(); saveState(); renderAll(); apiSave('live');
 }
 
 /* ============================================
@@ -834,6 +1025,22 @@ function finishMatch(winner) {
   logEntry(`?? <b>${winner.name}</b> reached square 100 and wins the match!`, 'win');
   saveState(); apiSave('finished');
   renderAll();
+
+  // Spark burst at the winning pawn
+  const p = pawnDom(winner.id);
+  if (p) {
+    sparksAt(p, winner.color || '#e8a93a', 40);
+    setTimeout(() => sparksAt(p, '#e8a93a', 24), 350);
+  }
+
+  // Inject rotating rays into victory card if not already there
+  const v = document.querySelector('.victory');
+  if (v && !v.querySelector('.rays')) {
+    const rays = document.createElement('div');
+    rays.className = 'rays';
+    v.prepend(rays);
+  }
+
   $('victoryName').textContent = winner.name.toUpperCase() + ' WINS';
   $('victoryBg').classList.remove('hidden');
   playSound('victory');
@@ -927,22 +1134,18 @@ function clearAllData() {
   undoStack = [];
   armedLoadedDie = null;
   currentMatchId = null;
-  localStorage.removeItem(CONFIG.LS_KEY);
   saveState(); buildBoard(); renderAll();
   apiLoadLeaderboard();
   toast('All data cleared.');
 }
 
 function clearLeaderboard() {
-  if (!confirm('Clear leaderboard history? Current match is unaffected.')) return;
-  leaderboard = {};
-  renderLeaderboard();
-  toast('Leaderboard cleared.');
+  toast('Leaderboard is server-managed — reset from the database or wait for new matches.');
 }
 
 function showRules() {
   const modeInfo = MODES.map(m => `• ${m.name}: ${m.desc}`).join('\n');
-  alert('Host workflow:\n\n1. Pick a Game Mode, add teams, then Start match.\n2. Tap Roll dice — it\'s a true random roll, animated for the crowd.\n3. The team auto-moves that many squares.\n4. Landing on a ladder or snake runs a 15-second field challenge — mark it Completed or Failed.\n5. First team to land exactly on 100 wins.\n\nGame Modes:\n' + modeInfo + '\n\nAll progress saves automatically to the server.');
+  alert('How to play:\n\n1. Pick a Game Mode, add teams, then Start match.\n2. Tap Roll dice — it\'s a true random roll, animated for the crowd.\n3. The team auto-moves that many squares.\n4. Landing on a ladder or snake runs a 15-second field challenge — mark it Completed or Failed.\n5. First team to land exactly on 100 wins.\n\nGame Modes:\n' + modeInfo + '\n\nAll progress saves automatically to the server.');
 }
 
 /* ============================================
@@ -981,6 +1184,11 @@ function renderAll() {
   renderModePanels();
   $('btnUndo').disabled = undoStack.length === 0;
   resetDice();
+  // Stop any in-flight animations on round change
+  const holder = $('boardHolder');
+  if (holder) holder.classList.remove('shake-snake', 'flip');
+  document.querySelectorAll('.pawn.hop, .pawn.climb-up, .pawn.glide-down')
+    .forEach(p => p.classList.remove('hop', 'climb-up', 'glide-down'));
 }
 
 /* ============================================
@@ -1171,8 +1379,264 @@ function activeLadders() {
 }
 
 function saveState() {
-  // Save to localStorage as backup
-  localStorage.setItem('snl_game_state_v1', JSON.stringify(state));
+  try {
+    localStorage.setItem('snl_game_state_v3', JSON.stringify(state));
+    localStorage.setItem('snl_leaderboard_v3', JSON.stringify(leaderboard));
+    if (state.started && !state.finished) apiSave('live');
+  } catch (e) {}
+}
+
+/* ---------- APP STATE / FLOW ---------- */
+let selectedPlayerCount = null;
+let selectedMode = null;
+let isAiMatch = false;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
+  const target = document.getElementById(id);
+  if (target) target.classList.remove('hidden');
+}
+function hideAllScreens() {
+  document.querySelectorAll('.screen').forEach(el => el.classList.add('hidden'));
+}
+
+/* ---------- MAIN MENU ---------- */
+function initMainMenu() {
+  const grid = $('playerCountGrid');
+  if (!grid) return;
+  grid.querySelectorAll('.player-card').forEach(card => {
+    card.addEventListener('click', () => {
+      grid.querySelectorAll('.player-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      selectedPlayerCount = parseInt(card.dataset.count, 10);
+    });
+  });
+
+  const btnContinue = $('btnContinueFromMenu');
+  if (btnContinue) {
+    btnContinue.addEventListener('click', () => {
+      if (!selectedPlayerCount) return toast('Choose how many players first.');
+      isAiMatch = selectedPlayerCount === 1;
+      openModeSelect();
+    });
+  }
+}
+
+function openModeSelect() {
+  const badge = $('modeCountBadge');
+  if (badge) {
+    const labels = { 1: 'Solo vs AI', 2: 'Duo', 3: 'Trio', 4: '4-Player' };
+    badge.textContent = labels[selectedPlayerCount] || selectedPlayerCount + ' Players';
+  }
+  renderModeCards();
+  showScreen('screen-mode-select');
+}
+
+function renderModeCards() {
+  const wrap = $('modeCards');
+  if (!wrap) return;
+  wrap.innerHTML = MODES.map(m => `
+    <div class="mode-card ${state.mode === m.id ? 'active' : ''}" data-mode="${m.id}">
+      <div class="mc-name">${m.name}</div>
+      <div class="mc-desc">${m.desc}</div>
+    </div>
+  `).join('');
+  wrap.querySelectorAll('.mode-card').forEach(card => {
+    card.addEventListener('click', () => {
+      wrap.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      selectedMode = card.dataset.mode;
+      const btn = $('btnContinueFromMode');
+      if (btn) btn.disabled = false;
+    });
+  });
+}
+
+function initModeSelectButtons() {
+  const btnBack = $('btnBackToMenu');
+  if (btnBack) btnBack.addEventListener('click', () => showScreen('screen-main-menu'));
+
+  const btnContinue = $('btnContinueFromMode');
+  if (btnContinue) {
+    btnContinue.addEventListener('click', () => {
+      if (!selectedMode) return toast('Choose a game mode first.');
+      state.mode = selectedMode;
+      openNameEntry();
+    });
+  }
+}
+
+/* ---------- NAME ENTRY ---------- */
+function openNameEntry() {
+  const badge = $('nameCountBadge');
+  if (badge) {
+    const labels = { 1: 'Solo vs AI', 2: 'Duo', 3: 'Trio', 4: '4-Player' };
+    badge.textContent = labels[selectedPlayerCount] || selectedPlayerCount + ' Players';
+  }
+  const banner = $('nameModeBanner');
+  if (banner) banner.textContent = MODES.find(m => m.id === state.mode)?.name || state.mode;
+
+  const grid = $('nameEntryGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  const count = selectedPlayerCount || 2;
+  for (let i = 0; i < count; i++) {
+    const row = document.createElement('div');
+    row.className = 'name-field';
+    const label = document.createElement('label');
+    label.textContent = 'Player ' + (i + 1) + (isAiMatch && i === 1 ? ' (AI)' : '');
+    label.style.display = 'block';
+    label.style.fontSize = '12px';
+    label.style.color = 'var(--chalk-muted)';
+    label.style.marginBottom = '6px';
+    const input = document.createElement('input');
+    input.className = 'name-entry-input';
+    input.type = 'text';
+    input.placeholder = 'Enter name';
+    input.value = isAiMatch && i === 1 ? 'Bot' : '';
+    input.dataset.index = i;
+    row.appendChild(label);
+    row.appendChild(input);
+    grid.appendChild(row);
+  }
+
+  showScreen('screen-name-entry');
+}
+
+function initNameEntryButtons() {
+  const btnBack = $('btnBackToMode');
+  if (btnBack) btnBack.addEventListener('click', () => showScreen('screen-mode-select'));
+
+  const btnStart = $('btnStartGame');
+  if (btnStart) {
+    btnStart.addEventListener('click', () => {
+      const inputs = document.querySelectorAll('.name-entry-input');
+      const names = Array.from(inputs).map(inp => inp.value.trim() || ('Player ' + (parseInt(inp.dataset.index, 10) + 1)));
+      startGameWithNames(names);
+    });
+  }
+}
+
+function startGameWithNames(names) {
+  state = freshState();
+  state.teams = names.map((name, idx) => ({
+    id: crypto.randomUUID(),
+    name,
+    color: TEAM_COLORS[idx % TEAM_COLORS.length],
+    pos: 1,
+    active: true,
+    inventory: { shield: 1, sabotage: 1, swapper: 1, loadedDie: 1 },
+    shieldArmed: false
+  }));
+  state.mode = selectedMode || 'classic';
+  state.started = true;
+  currentMatchId = null;
+  undoStack = [];
+  armedLoadedDie = null;
+  saveState();
+  buildBoard();
+  renderAll();
+  updateGameMeta();
+  showScreen('screen-game');
+  apiCreateMatch('live');
+  startAutoSave();
+  apiLoadLeaderboard();
+  playSound('start');
+}
+
+function updateGameMeta() {
+  const modeEl = $('metaMode');
+  const playersEl = $('metaPlayers');
+  if (modeEl) modeEl.textContent = (MODES.find(m => m.id === state.mode)?.name || state.mode);
+  if (playersEl) playersEl.textContent = state.teams.length + ' Player' + (state.teams.length === 1 ? '' : 's');
+}
+
+/* ---------- ARENA ---------- */
+let arenaMode = 'classic';
+let arenaCount = 2;
+
+function initArena() {
+  const btnArena = $('btnNavArena');
+  if (btnArena) {
+    btnArena.addEventListener('click', () => {
+      loadArena();
+      showScreen('screen-arena');
+    });
+  }
+
+  const btnBack = $('btnBackFromArena');
+  if (btnBack) btnBack.addEventListener('click', () => showScreen('screen-main-menu'));
+
+  document.querySelectorAll('#arenaModePills .pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#arenaModePills .pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      arenaMode = btn.dataset.mode || 'classic';
+      loadArena();
+    });
+  });
+
+  document.querySelectorAll('#arenaCountPills .pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#arenaCountPills .pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      arenaCount = parseInt(btn.dataset.count, 10) || 2;
+      loadArena();
+    });
+  });
+}
+
+async function loadArena() {
+  const body = $('arenaBody');
+  if (body) body.innerHTML = '<tr><td colspan="2" class="empty-note">Loading…</td></tr>';
+  try {
+    const params = new URLSearchParams({ mode: arenaMode, player_count: String(arenaCount), limit: '50' });
+    const res = await fetch(`${CONFIG.API_BASE}/arena.php?${params.toString()}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed');
+    renderArenaRows(data.rows || []);
+  } catch (e) {
+    if (body) body.innerHTML = '<tr><td colspan="2" class="empty-note">Failed to load arena.</td></tr>';
+  }
+}
+
+function renderArenaRows(rows) {
+  const body = $('arenaBody');
+  if (!body) return;
+  if (!rows.length) {
+    body.innerHTML = '<tr><td colspan="2" class="empty-note">No finishes yet for this filter.</td></tr>';
+    return;
+  }
+  body.innerHTML = rows.map((row, idx) => `
+    <tr>
+      <td class="col-rank">${idx + 1}</td>
+      <td class="col-name">${escapeHtml(row.name)}</td>
+    </tr>
+  `).join('');
+}
+
+/* ---------- GAME NAVIGATION ---------- */
+function initGameButtons() {
+  const btnQuit = $('btnQuitToMenu');
+  if (btnQuit) {
+    btnQuit.addEventListener('click', () => {
+      if (state.started && !state.finished) {
+        if (!confirm('Quit to main menu? Current progress is saved.')) return;
+      }
+      showScreen('screen-main-menu');
+    });
+  }
+
+  const brand = $('brandHome');
+  if (brand) {
+    brand.addEventListener('click', () => showScreen('screen-main-menu'));
+    brand.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        showScreen('screen-main-menu');
+      }
+    });
+  }
 }
 
 /* ============================================
@@ -1185,24 +1649,36 @@ $('btnAddTeam').addEventListener('click', () => {
 });
 
 $('btnStartMatch').addEventListener('click', startMatch);
-$('btnInvert').addEventListener('click', () => applyShift('invert'));
-$('btnQuicksand').addEventListener('click', () => applyShift('quicksand'));
-$('btnBounty').addEventListener('click', () => applyShift('bounty'));
-$('btnLoadedLow').addEventListener('click', () => armLoadedDie('low'));
-$('btnLoadedHigh').addEventListener('click', () => armLoadedDie('high'));
-$('btnResetMatch').addEventListener('click', resetMatch);
-$('btnClearAll').addEventListener('click', clearAllData);
 $('btnClearLb').addEventListener('click', clearLeaderboard);
 $('btnRules').addEventListener('click', showRules);
-$('btnToggleKey').addEventListener('click', () => $('masterKey').classList.toggle('hidden'));
 
 /* ============================================
    INIT
    ============================================ */
 window.addEventListener('DOMContentLoaded', () => {
   buildBoard();
-  apiLoad();
-  apiLoadLeaderboard();
+  buildDice();
+  initMainMenu();
+  initModeSelectButtons();
+  initNameEntryButtons();
+  initArena();
+  initGameButtons();
+  showScreen('screen-main-menu');
+
+  // Mobile roll button mirrors desktop
+  const mobile = $('btnRollMobile');
+  if (mobile) {
+    mobile.addEventListener('click', () => doRoll());
+  }
+  // Spacebar to roll (desktop convenience)
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && !isRolling && state.started && !state.finished) {
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      doRoll();
+    }
+  });
 });
 
 })();

@@ -1,0 +1,17 @@
+# API directory hardening — no directory listing, no static file exec
+Options -Indexes -ExecCGI
+
+# Only GET (read) and POST (write) allowed everywhere by default.
+# Per-endpoint code enforces which it accepts.
+<LimitExcept GET POST OPTIONS>
+    Require all denied
+</LimitExcept>
+
+# Cache control for API responses (security headers are already set by root .htaccess;
+# don't re-emit them here to avoid duplication).
+<IfModule mod_headers.c>
+    <FilesMatch "\.php$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, private"
+        Header set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>

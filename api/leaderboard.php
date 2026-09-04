@@ -1,12 +1,16 @@
 <?php
 /**
  * api/leaderboard.php
- * Returns leaderboard data sorted by wins descending
+ * Public read-only aggregate stats.
  */
 
 declare(strict_types=1);
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+
+require_once __DIR__ . '/../config/security.php';
+
+if (!sl_rate_limit('leaderboard', 120)) {
+    sl_json_out(['success' => false, 'error' => 'Too many requests'], 429);
+}
 
 require_once __DIR__ . '/../config/db.php';
 
@@ -15,17 +19,22 @@ try {
         SELECT t.name, t.color, l.wins, l.losses, l.total_matches
         FROM leaderboard l
         JOIN teams t ON t.id = l.team_id
-        ORDER BY l.wins DESC, l.total_matches DESC
+        WHERE l.total_matches > 0
+        ORDER BY l.wins DESC, l.total_matches DESC, t.name ASC
+        LIMIT 100
     ");
-
     $rows = $stmt->fetchAll();
 
-    echo json_encode([
-        'success'     => true,
-        'leaderboard' => $rows
-    ]);
+    // Sanitize color strings before exposing
+    foreach ($rows as &$r) {
+        if (!preg_match('/^#[0-9a-f]{6}$/i', $r['color'] ?? '')) {
+            $r['color'] = '#888888';
+        }
+    }
+    unset($r);
 
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    sl_json_out(['success' => true, 'leaderboard' => $rows]);
+} catch (Throwable $e) {
+    error_log('leaderboard: ' . $e->getMessage());
+    sl_json_out(['success' => false, 'error' => 'Internal error'], 500);
 }
